@@ -1,0 +1,15 @@
+name = "ucan-kms"
+main = "dist/worker.mjs"
+compatibility_date = "2024-07-15"
+
+[build]
+command = "npm run build"
+outdir = "dist"
+
+[vars]
+ENVIRONMENT = "development"
+
+# Add your KMS configuration here
+# KMS_KEY_RING = "your-key-ring"
+# KMS_LOCATION = "global"
+# KMS_PROJECT_ID = "your-project-id"

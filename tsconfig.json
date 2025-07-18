@@ -1,0 +1,35 @@
+{
+  "include": [
+    "src",
+    "test",
+    "scripts"
+  ],
+  "exclude": [
+    "node_modules"
+  ],
+  "compilerOptions": {
+    "declaration": true,
+    "declarationMap": true,
+    "emitDeclarationOnly": true,
+    "outDir": "dist",
+    "allowJs": true,
+    "checkJs": true,
+    "strict": true,
+    "esModuleInterop": true,
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "target": "ES2022",
+    "sourceMap": true,
+    "types": [
+      "@cloudflare/workers-types",
+      "node"
+    ]
+  }
+}
