@@ -1,30 +1,30 @@
-import { Result } from '@ucanto/client'
-import { SpaceDID } from '@storacha/capabilities/types'
-import { Env } from '../types/env.js'
+import { Result } from "@ucanto/client";
+import { SpaceDID } from "@storacha/capabilities/types";
+import { Env } from "../types/env.js";
 
 export interface EncryptionSetupResult {
   /** The public key for the space in PEM format */
-  publicKey: string
+  publicKey: string;
   /** The algorithm used to encrypt the symmetric key */
-  algorithm: string
+  algorithm: string;
   /** The provider of the KMS key */
-  provider: string
+  provider: string;
 }
 
 export interface EncryptionSetupRequest {
   /** The space DID to create/retrieve key for */
-  space: SpaceDID
+  space: SpaceDID;
   /** Optional location override (falls back to env.GOOGLE_KMS_LOCATION) */
-  location?: string
+  location?: string;
   /** Optional keyring override (falls back to env.GOOGLE_KMS_KEYRING_NAME) */
-  keyring?: string
+  keyring?: string;
 }
 
 export interface DecryptionKeyRequest {
   /** Uint8Array encrypted symmetric key */
-  encryptedSymmetricKey: Uint8Array
+  encryptedSymmetricKey: Uint8Array;
   /** The space DID that owns the key */
-  space: SpaceDID
+  space: SpaceDID;
 }
 
 export interface KMSService {
@@ -33,14 +33,14 @@ export interface KMSService {
    */
   setupKeyForSpace(
     request: EncryptionSetupRequest,
-    env: Env
-  ): Promise<Result<EncryptionSetupResult, Error>>
+    env: Env,
+  ): Promise<Result<EncryptionSetupResult, Error>>;
 
   /**
    * Decrypts a symmetric key using the space's KMS private key
    */
   decryptSymmetricKey(
     request: DecryptionKeyRequest,
-    env: Env
-  ): Promise<Result<{ decryptedKey: string }, Error>>
+    env: Env,
+  ): Promise<Result<{ decryptedKey: string }, Error>>;
 }

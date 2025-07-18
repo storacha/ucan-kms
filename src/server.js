@@ -7,7 +7,7 @@ import * as CAR from '@ucanto/transport/car'
  * @param {import('./api.types.js').Context} ctx
  * @param {import('./api.types.js').Service} service
  */
-export function createServer(ctx, service) {
+export function createServer (ctx, service) {
   return Server.create({
     id: ctx.ucanKmsSigner,
     codec: CAR.inbound,

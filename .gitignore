@@ -45,3 +45,7 @@ coverage/
 
 # Ignore test output
 /test-results/
+
+# Ignore test coverage reports
+coverage/
+.nyc_output/

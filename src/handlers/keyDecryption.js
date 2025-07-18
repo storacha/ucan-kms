@@ -11,7 +11,7 @@ import { EncryptionKeyDecrypt } from '@storacha/capabilities/space'
  * @param {import('../types/env.js').Env} env
  * @returns {Promise<import('@ucanto/client').Result<{decryptedSymmetricKey: string}, Error>>}
  */
-export async function handleKeyDecryption(request, invocation, ctx, env) {
+export async function handleKeyDecryption (request, invocation, ctx, env) {
   const auditLog = new AuditLogService({
     serviceName: 'key-decryption-handler',
     environment: 'unknown'

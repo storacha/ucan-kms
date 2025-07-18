@@ -10,7 +10,7 @@ import { EncryptionSetup, EncryptionKeyDecrypt } from '@storacha/capabilities/sp
  * @param {import('./types/env.js').Env} env
  * @returns {import('./api.types.js').Service}
  */
-export function createService(ctx, env) {
+export function createService (ctx, env) {
   return {
     space: {
       encryption: {

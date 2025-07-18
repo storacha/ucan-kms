@@ -1,20 +1,20 @@
-import { AuditLogService } from './auditLog.js'
+import { AuditLogService } from "./auditLog.js";
 
 /**
  * Rate limit configuration for a specific operation
  */
 export interface RateLimitConfig {
   /** Number of operations allowed per space per time window */
-  perSpace: number
-  
-  /** Number of operations allowed per user per time window */  
-  perUser: number
-  
+  perSpace: number;
+
+  /** Number of operations allowed per user per time window */
+  perUser: number;
+
   /** Number of operations allowed globally per time window */
-  global: number
-  
+  global: number;
+
   /** Time window in minutes */
-  windowMinutes: number
+  windowMinutes: number;
 }
 
 /**
@@ -22,16 +22,16 @@ export interface RateLimitConfig {
  */
 export interface RateLimitStatus {
   /** Current count for the space */
-  spaceCount: number
-  
+  spaceCount: number;
+
   /** Current count for the user */
-  userCount: number
-  
+  userCount: number;
+
   /** Current global count */
-  globalCount: number
-  
+  globalCount: number;
+
   /** Rate limit configuration or null if operation unknown */
-  limits: RateLimitConfig | null
+  limits: RateLimitConfig | null;
 }
 
 /**
@@ -39,7 +39,7 @@ export interface RateLimitStatus {
  */
 export interface KmsRateLimiterOptions {
   /** Audit logging service for security events */
-  auditLog?: AuditLogService
+  auditLog?: AuditLogService;
 }
 
 /**
@@ -53,16 +53,24 @@ export interface KmsRateLimiterService {
    * @param spaceDID - Space DID
    * @returns Error message if rate limited, null if allowed
    */
-  checkRateLimit(invocation: any, operation: string, spaceDID: string): Promise<string | null>
-  
+  checkRateLimit(
+    invocation: any,
+    operation: string,
+    spaceDID: string,
+  ): Promise<string | null>;
+
   /**
    * Record a successful KMS operation for rate limiting
-   * @param invocation - UCAN invocation  
+   * @param invocation - UCAN invocation
    * @param operation - Operation type
    * @param spaceDID - Space DID
    */
-  recordOperation(invocation: any, operation: string, spaceDID: string): Promise<void>
-  
+  recordOperation(
+    invocation: any,
+    operation: string,
+    spaceDID: string,
+  ): Promise<void>;
+
   /**
    * Get current rate limit status for debugging/monitoring
    * @param invocation - UCAN invocation
@@ -70,5 +78,9 @@ export interface KmsRateLimiterService {
    * @param spaceDID - Space DID
    * @returns Current rate limit status
    */
-  getRateLimitStatus(invocation: any, operation: string, spaceDID: string): Promise<RateLimitStatus>
-} 
+  getRateLimitStatus(
+    invocation: any,
+    operation: string,
+    spaceDID: string,
+  ): Promise<RateLimitStatus>;
+}

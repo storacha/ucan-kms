@@ -11,13 +11,13 @@ import { UcanPrivacyValidationServiceImpl } from './services/ucanValidation.js'
 
 export default {
   /**
-   * 
-   * @param {Request} request 
-   * @param {import('./types/env.js').Env} env 
-   * @param {import('./api.types.js').Context} ctx 
-   * @returns 
+   *
+   * @param {Request} request
+   * @param {import('./types/env.js').Env} env
+   * @param {import('./api.types.js').Context} ctx
+   * @returns
    */
-  async fetch(request, env, ctx) {
+  async fetch (request, env, ctx) {
     if (request.method !== 'POST' || new URL(request.url).pathname !== '/') {
       // Not supported
       return new Response(null, { status: 405 })

@@ -11,7 +11,7 @@ import { EncryptionSetup } from '@storacha/capabilities/space'
  * @param {import('../types/env.d.ts').Env} env
  * @returns {Promise<import('@ucanto/client').Result<{publicKey: string, algorithm: string, provider: string}, Error>>}
  */
-export async function handleEncryptionSetup(request, invocation, ctx, env) {
+export async function handleEncryptionSetup (request, invocation, ctx, env) {
   const auditLog = new AuditLogService({
     serviceName: 'encryption-setup-handler',
     environment: 'unknown'
