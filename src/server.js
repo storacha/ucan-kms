@@ -8,12 +8,18 @@ import * as CAR from '@ucanto/transport/car'
  * @param {import('./api.types.js').Service} service
  */
 export function createServer (ctx, service) {
+  console.log('Creating server...')
   return Server.create({
     id: ctx.ucanKmsSigner,
     codec: CAR.inbound,
     service,
-    catch: err => console.error(err),
+    catch: err => {
+      console.error('Error in server:', err)
+    },
     // TODO: wire into revocations
-    validateAuthorization: () => ({ ok: {} })
+    validateAuthorization: () => {
+      console.log('Validating authorization...')
+      return { ok: {} }
+    }
   })
 }

@@ -12,24 +12,29 @@ import { EncryptionSetup } from '@storacha/capabilities/space'
  * @returns {Promise<import('@ucanto/client').Result<{publicKey: string, algorithm: string, provider: string}, Error>>}
  */
 export async function handleEncryptionSetup (request, invocation, ctx, env) {
+  console.log('[EncryptionSetup] Starting encryption setup for space:', request.space);
   const auditLog = new AuditLogService({
     serviceName: 'encryption-setup-handler',
-    environment: 'unknown'
-  })
-
+    environment: env.ENVIRONMENT || 'unknown'
+  });
+  console.log('[EncryptionSetup] Audit log service initialized');
+  
   const startTime = Date.now()
-
+  
   try {
+    auditLog.logInvocation(request.space, EncryptionSetup.can, true, undefined, undefined, Date.now() - startTime)
     if (env.FF_DECRYPTION_ENABLED !== 'true') {
-      const errorMsg = 'Encryption setup is not enabled'
-      auditLog.logInvocation(request.space, EncryptionSetup.can, false, errorMsg, undefined, Date.now() - startTime)
-      return error(errorMsg)
+      const errorMsg = 'Encryption setup is not enabled';
+      console.log('[EncryptionSetup] Feature flag FF_DECRYPTION_ENABLED is not enabled');
+      auditLog.logInvocation(request.space, EncryptionSetup.can, false, errorMsg, undefined, Date.now() - startTime);
+      return error(errorMsg);
     }
 
     if (!ctx.ucanKmsIdentity) {
-      const errorMsg = 'Encryption setup not available - ucanKms identity not configured'
-      auditLog.logInvocation(request.space, EncryptionSetup.can, false, errorMsg, undefined, Date.now() - startTime)
-      return error(errorMsg)
+      const errorMsg = 'Encryption setup not available - ucanKms identity not configured';
+      console.log('[EncryptionSetup] Error: ucanKmsIdentity not found in context');
+      auditLog.logInvocation(request.space, EncryptionSetup.can, false, errorMsg, undefined, Date.now() - startTime);
+      return error(errorMsg);
     }
 
     // Step 1: Validate encryption setup delegation
@@ -48,16 +53,20 @@ export async function handleEncryptionSetup (request, invocation, ctx, env) {
     }
 
     // Step 3: Create or retrieve KMS key
+    console.log('[EncryptionSetup] Checking KMS service availability');
     if (!ctx.kms) {
-      const errorMsg = 'KMS service not available'
-      auditLog.logInvocation(request.space, EncryptionSetup.can, false, errorMsg, undefined, Date.now() - startTime)
-      return error(errorMsg)
+      const errorMsg = 'KMS service not available';
+      console.error('[EncryptionSetup] Error: KMS service not found in context');
+      auditLog.logInvocation(request.space, EncryptionSetup.can, false, errorMsg, undefined, Date.now() - startTime);
+      return error(errorMsg);
     }
 
-    const kmsResult = await ctx.kms.setupKeyForSpace(request, env)
+    console.log('[EncryptionSetup] Setting up KMS key for space');
+    const kmsResult = await ctx.kms.setupKeyForSpace(request, env);
     if (kmsResult?.error) {
-      auditLog.logInvocation(request.space, EncryptionSetup.can, false, 'KMS setup failed', undefined, Date.now() - startTime)
-      return error(kmsResult.error.message)
+      console.error('[EncryptionSetup] KMS setup failed:', kmsResult.error.message);
+      auditLog.logInvocation(request.space, EncryptionSetup.can, false, 'KMS setup failed', undefined, Date.now() - startTime);
+      return error(kmsResult.error.message);
     }
 
     // Step 4: Validate KMS result
@@ -69,12 +78,19 @@ export async function handleEncryptionSetup (request, invocation, ctx, env) {
     }
 
     // Step 5: Success - Return KMS result
-    const duration = Date.now() - startTime
-    auditLog.logInvocation(request.space, EncryptionSetup.can, true, undefined, undefined, duration)
-    return ok({ provider, publicKey, algorithm })
-  } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : String(err)
-    auditLog.logInvocation(request.space, EncryptionSetup.can, false, errorMessage, undefined, Date.now() - startTime)
-    return error(errorMessage)
+    const duration = Date.now() - startTime;
+    console.log(`[EncryptionSetup] Successfully set up KMS key for space ${request.space}`);
+    console.log('[EncryptionSetup] Provider:', provider);
+    console.log('[EncryptionSetup] Algorithm:', algorithm);
+    auditLog.logInvocation(request.space, EncryptionSetup.can, true, undefined, undefined, duration);
+    return ok({ provider, publicKey, algorithm });
+  } catch (/** @type {any} */ err) {
+    const errorMessage = err?.message ? String(err.message) : 'Unknown error during encryption setup';
+    console.error('[EncryptionSetup] Error during encryption setup:', errorMessage);
+    if (err?.stack) {
+      console.error('[EncryptionSetup] Stack trace:', err.stack);
+    }
+    auditLog.logInvocation(request.space, EncryptionSetup.can, false, errorMessage, undefined, Date.now() - startTime);
+    return error(errorMessage);
   }
 }

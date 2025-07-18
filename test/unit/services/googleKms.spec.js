@@ -373,35 +373,33 @@ describe('GoogleKMSService', () => {
     })
   })
 
+  // Helper to create a test environment with all required fields
+  function createTestEnv(overrides = {}) {
+    return {
+      UCAN_KMS_PRINCIPAL_KEY: 'test-principal-key',
+      UCAN_KMS_SERVICE_DID: 'did:web:test.example.com',
+      FF_DECRYPTION_ENABLED: 'true',
+      FF_KMS_RATE_LIMITER_ENABLED: 'true',
+      GOOGLE_KMS_BASE_URL: 'https://cloudkms.googleapis.com/v1',
+      GOOGLE_KMS_PROJECT_ID: 'test-project',
+      GOOGLE_KMS_LOCATION: 'global',
+      GOOGLE_KMS_KEYRING_NAME: 'test-keyring',
+      GOOGLE_KMS_TOKEN: 'valid_token_1234567890',
+      ...overrides
+    }
+  }
+
   describe('Configuration Validation', () => {
     it('should validate configuration with valid environment', () => {
-      const validEnv = {
-        UCAN_KMS_PRINCIPAL_KEY: 'test-principal-key',
-        UCAN_KMS_SERVICE_DID: 'did:web:test.example.com',
-        FF_DECRYPTION_ENABLED: 'true',
-        FF_KMS_RATE_LIMITER_ENABLED: 'true',
-        GOOGLE_KMS_BASE_URL: 'https://cloudkms.googleapis.com/v1',
-        GOOGLE_KMS_PROJECT_ID: 'test-project',
-        GOOGLE_KMS_LOCATION: 'global',
-        GOOGLE_KMS_KEYRING_NAME: 'test-keyring',
-        GOOGLE_KMS_TOKEN: 'valid_token_1234567890'
-      }
+      const validEnv = createTestEnv()
 
       expect(() => new GoogleKMSService(validEnv)).to.not.throw()
     })
 
     it('should throw error for invalid GOOGLE_KMS_BASE_URL', () => {
-      const invalidEnv = {
-        UCAN_KMS_PRINCIPAL_KEY: 'test-principal-key',
-        UCAN_KMS_SERVICE_DID: 'did:web:test.example.com',
-        FF_DECRYPTION_ENABLED: 'true',
-        FF_KMS_RATE_LIMITER_ENABLED: 'true',
-        GOOGLE_KMS_BASE_URL: 'https://malicious-site.com',
-        GOOGLE_KMS_PROJECT_ID: 'test-project',
-        GOOGLE_KMS_LOCATION: 'global',
-        GOOGLE_KMS_KEYRING_NAME: 'test-keyring',
-        GOOGLE_KMS_TOKEN: 'valid_token_1234567890'
-      }
+      const invalidEnv = createTestEnv({
+        GOOGLE_KMS_BASE_URL: 'https://malicious-site.com'
+      })
 
       expect(() => new GoogleKMSService(invalidEnv))
         .to.throw('Must be an official Google Cloud KMS endpoint')
@@ -496,17 +494,10 @@ describe('GoogleKMSService', () => {
       const validRegions = ['global', 'us-central1', 'europe-west1', 'asia-east1']
 
       validRegions.forEach(region => {
-        const validEnv = {
-          UCAN_KMS_PRINCIPAL_KEY: 'test-principal-key',
-          UCAN_KMS_SERVICE_DID: 'did:web:test.example.com',
-          FF_DECRYPTION_ENABLED: 'true',
-          FF_KMS_RATE_LIMITER_ENABLED: 'true',
-          GOOGLE_KMS_BASE_URL: 'https://cloudkms.googleapis.com/v1',
-          GOOGLE_KMS_PROJECT_ID: 'test-project',
-          GOOGLE_KMS_LOCATION: region,
-          GOOGLE_KMS_KEYRING_NAME: 'test-keyring',
-          GOOGLE_KMS_TOKEN: 'valid_token_1234567890'
-        }
+        const validEnv = createTestEnv({
+          GOOGLE_KMS_BASE_URL: `https://cloudkms.googleapis.com/v1/projects/test-project/locations/${region}`,
+          GOOGLE_KMS_LOCATION: region
+        })
 
         expect(() => new GoogleKMSService(validEnv), `Should accept region: ${region}`).to.not.throw()
       })
