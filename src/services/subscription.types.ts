@@ -1,4 +1,4 @@
-import { Result } from "@ucanto/client";
+import { Result } from "@ucanto/server";
 import { Env } from "../types/env.js";
 
 export interface SubscriptionStatusService {
@@ -7,10 +7,10 @@ export interface SubscriptionStatusService {
    *
    * @param space - The space DID to check
    * @param env - Environment configuration
-   * @returns Promise with the validation result or error
+   * @returns Promise with the validation result
    */
   isProvisioned(
     space: import("@storacha/capabilities/types").SpaceDID,
     env: Env,
-  ): Promise<Result<{ ok: boolean }, Error>>;
+  ): Promise<Result<{ ok: boolean }, import("@ucanto/server").Failure>>;
 }

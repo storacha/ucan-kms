@@ -1,5 +1,5 @@
-import { ok, error } from '@ucanto/validator'
 import { AuditLogService } from './auditLog.js'
+import { error, ok, Failure } from '@ucanto/server'
 
 /**
  * @import { RevocationStatusService } from './revocation.types.js'
@@ -22,7 +22,10 @@ export class RevocationStatusServiceImpl {
       serviceName: 'revocation-status-service',
       environment: options.environment || 'unknown'
     })
-    this.auditLog.logServiceInitialization('RevocationStatusService', true)
+    // Only log service initialization in development
+    if (process.env.NODE_ENV === 'development') {
+      this.auditLog.logServiceInitialization('RevocationStatusService', true)
+    }
   }
 
   /**
@@ -30,7 +33,7 @@ export class RevocationStatusServiceImpl {
    *
    * @param {Ucanto.Proof[]} proofs - Array of UCAN proofs to check
    * @param {import('../types/env.js').Env} env - Environment configuration
-   * @returns {Promise<import('@ucanto/client').Result<{ ok: boolean }, Error>>}
+   * @returns {Promise<import('@ucanto/server').Result<boolean, import('@ucanto/server').Failure>>}
    */
   async checkStatus (proofs, env) {
     const safeProofs = proofs || []
@@ -47,7 +50,7 @@ export class RevocationStatusServiceImpl {
           }
         })
 
-        return ok({ ok: true })
+        return ok(true)
       }
 
       // TODO: Implement actual revocation status checking via Storage UCAN Service
@@ -69,19 +72,20 @@ export class RevocationStatusServiceImpl {
         }
       })
 
-      return ok({ ok: true })
+      return ok(true)
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : String(err)
+      console.error('[checkStatus] something went wrong:', err)
 
       // Log revocation check failure
       this.auditLog.logSecurityEvent('revocation_check_failure', {
         operation: 'revocation_check',
         status: 'failure',
-        error: errorMessage,
+        error: err instanceof Error ? err.message : String(err),
         metadata: { proofsCount: safeProofs.length }
       })
 
-      return error(errorMessage)
+      // Generic error message must be returned to the client to avoid leaking information
+      return error(new Failure('Revocation status check failed'))
     }
   }
 }

@@ -1,4 +1,4 @@
-import { Result } from "@ucanto/client";
+import { Result } from "@ucanto/server";
 import * as Ucanto from "@ucanto/interface";
 import { Env } from "../types/env.js";
 
@@ -8,10 +8,10 @@ export interface RevocationStatusService {
    *
    * @param proofs - Array of UCAN proofs to check
    * @param env - Environment configuration
-   * @returns Promise with the check result or error
+   * @returns Promise with the check result
    */
   checkStatus(
     proofs: Ucanto.Proof[],
     env: Env,
-  ): Promise<Result<{ ok: boolean }, Error>>;
+  ): Promise<Result<boolean, import("@ucanto/server").Failure>>;
 }

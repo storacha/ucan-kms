@@ -5,7 +5,18 @@ compatibility_date = "2024-07-15"
 
 [build]
 command = "npm run build"
-outdir = "dist"
+# outdir = "dist"
+
+[vars]
+GOOGLE_KMS_BASE_URL = "https://cloudkms.googleapis.com/v1"
+GOOGLE_KMS_PROJECT_ID = "storacha-staging"
+GOOGLE_KMS_LOCATION = "global"
+GOOGLE_KMS_KEYRING_NAME = "ucan-kms-staging-keyring"
+ENVIRONMENT = "development"
+FF_DECRYPTION_ENABLED = "true"
+FF_KMS_RATE_LIMITER_ENABLED = "true"
+UCAN_KMS_SERVICE_DID = "did:web:dev.kms.storacha.link"
+
 
 #### STAGING ENVIRONMENT CONFIGURATION
 
@@ -39,19 +50,6 @@ GOOGLE_KMS_PROJECT_ID = "storacha-staging"
 GOOGLE_KMS_LOCATION = "global"
 GOOGLE_KMS_KEYRING_NAME = "private-gateway"
 
-# Staging Environment-specific SECRETS
-# Secrets are not defined in wrangler.toml
-# Use wrangler secret put commands or .dev.vars file for local development
-# [[env.staging.unsafe.bindings]]
-# name = "GOOGLE_KMS_TOKEN"
-# type = "secret"
-# secret = "GOOGLE_KMS_TOKEN"
-# 
-# [[env.staging.unsafe.bindings]]
-# name = "UCAN_KMS_PRINCIPAL_KEY"
-# type = "secret"
-# secret = "UCAN_KMS_PRINCIPAL_KEY"
-
 #### FFORBECK ENVIRONMENT CONFIGURATION
 # Forbeck Environment-specific observability settings
 [env.fforbeck.observability]
@@ -81,16 +79,3 @@ GOOGLE_KMS_BASE_URL = "https://cloudkms.googleapis.com/v1"
 GOOGLE_KMS_PROJECT_ID = "storacha-staging"
 GOOGLE_KMS_LOCATION = "global"
 GOOGLE_KMS_KEYRING_NAME = "ucan-kms-staging-keyring"
-
-# Forbeck Environment-specific SECRETS
-# Secrets are not defined in wrangler.toml
-# Use wrangler secret put commands or .dev.vars file for local development
-# [[env.fforbeck.unsafe.bindings]]
-# name = "GOOGLE_KMS_TOKEN"
-# type = "secret"
-# secret = "GOOGLE_KMS_TOKEN"
-# 
-# [[env.fforbeck.unsafe.bindings]]
-# name = "UCAN_KMS_PRINCIPAL_KEY"
-# type = "secret"
-# secret = "UCAN_KMS_PRINCIPAL_KEY"

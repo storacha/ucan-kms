@@ -58,8 +58,8 @@ describe('PlanSubscriptionService', () => {
           // Force an error to test the catch block
           throw new Error('Service error')
         } catch (err) {
-          const { error } = await import('@ucanto/validator')
-          return error(err instanceof Error ? err.message : String(err))
+          const { error, Failure } = await import('@ucanto/server')
+          return error(new Failure(err instanceof Error ? err.message : String(err)))
         }
       }
 

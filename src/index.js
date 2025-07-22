@@ -45,32 +45,38 @@ export default {
         UcantoSchema.DID.from(env.UCAN_KMS_SERVICE_DID)
       );
             
-      const newCtx = {
-        ...ctx,
-        ucanKmsSigner,
-        ucanKmsIdentity,
-        kms: new GoogleKMSService(env, { auditLog, environment: env.ENVIRONMENT }),
-        kmsRateLimiter: new KmsRateLimiter(env, { auditLog }),
-        revocationStatusService: new RevocationStatusServiceImpl({ auditLog }),
-        subscriptionStatusService: new PlanSubscriptionServiceImpl({ auditLog }),
-        ucanPrivacyValidationService: new UcanPrivacyValidationServiceImpl({ auditLog })
-      };
-      // Create service handler and ucan server
-      const service = ctx.service ?? createService(newCtx, env)
-      const server = ctx.server ?? createServer(newCtx, service)
+      // Add services to the existing context
+      ctx.ucanKmsSigner = ucanKmsSigner;
+      ctx.ucanKmsIdentity = ucanKmsIdentity;
+      ctx.kms = new GoogleKMSService(env, { auditLog, environment: env.ENVIRONMENT });
+      ctx.kmsRateLimiter = new KmsRateLimiter(env, { auditLog });
+      ctx.revocationStatusService = new RevocationStatusServiceImpl({ auditLog });
+      ctx.subscriptionStatusService = new PlanSubscriptionServiceImpl({ auditLog });
+      ctx.ucanPrivacyValidationService = new UcanPrivacyValidationServiceImpl({ auditLog });
 
-      // Process request
-      console.log('[Main] Processing request...');
-      const { headers, body, status } = await server.request({
+      // Create service handler and ucan server
+      const service = ctx.service ?? createService(ctx, env)
+      const server = ctx.server ?? createServer(ctx, service)
+
+      const { body, headers } = await server.request({
         body: new Uint8Array(await request.arrayBuffer()),
         headers: Object.fromEntries(request.headers),
       })
-
-      console.log('[Main] Request processed');
-      return new Response(body, { headers, status: status ?? 200 })
+      
+      // Add CORS headers to the response
+      const responseHeaders = new Headers(headers)
+      responseHeaders.set('Access-Control-Allow-Origin', '*')
+      responseHeaders.set('Access-Control-Allow-Methods', 'POST, OPTIONS')
+      responseHeaders.set('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+      
+      return new Response(body, { status: 200, headers: responseHeaders })
     } catch (error) {
       console.error('Error processing request:', error)
-      return new Response('Internal Server Error', { status: 500 })
+      const errorHeaders = new Headers()
+      errorHeaders.set('Access-Control-Allow-Origin', '*')
+      errorHeaders.set('Access-Control-Allow-Methods', 'POST, OPTIONS')
+      errorHeaders.set('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+      return new Response('Internal Server Error', { status: 500, headers: errorHeaders })
     }
   }
 }

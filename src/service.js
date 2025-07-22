@@ -2,7 +2,7 @@ import * as UcantoServer from '@ucanto/server'
 import { handleEncryptionSetup } from './handlers/encryptionSetup.js'
 import { handleKeyDecryption } from './handlers/keyDecryption.js'
 import { Schema } from '@ucanto/validator'
-import { error } from '@ucanto/client'
+import { error, Failure } from '@ucanto/server'
 import { EncryptionSetup, EncryptionKeyDecrypt } from '@storacha/capabilities/space'
 
 /**
@@ -11,7 +11,6 @@ import { EncryptionSetup, EncryptionKeyDecrypt } from '@storacha/capabilities/sp
  * @returns {import('./api.types.js').Service}
  */
 export function createService (ctx, env) {
-  console.log('[createService] Creating service handler...')
   return {
     space: {
       encryption: {
@@ -19,17 +18,13 @@ export function createService (ctx, env) {
           capability: EncryptionSetup,
           audience: Schema.did({ method: 'web' }),
           handler: async ({ capability, invocation }) => {
-            console.log('[createService] Handling encryption setup...')
             if (ctx.kmsRateLimiter) {
-              console.log('[createService] Checking rate limit...')
               const rateLimitViolation = await ctx.kmsRateLimiter.checkRateLimit(invocation, EncryptionSetup.can, capability.with)
               if (rateLimitViolation) {
-                console.log('[createService] Rate limit violation:', rateLimitViolation)
-                return error(new Error(rateLimitViolation))
+                return error(new Failure(rateLimitViolation))
               }
             }
 
-            console.log('[createService] Validating space...')
             const space = /** @type {import('@storacha/capabilities/types').SpaceDID} */ (capability.with)
             const request = {
               space,
@@ -38,12 +33,11 @@ export function createService (ctx, env) {
             }
 
             const result = await handleEncryptionSetup(request, invocation, ctx, env)
-
             // Record successful operation for rate limiting
             if (result.ok && ctx.kmsRateLimiter) {
               ctx.waitUntil(ctx.kmsRateLimiter.recordOperation(invocation, EncryptionSetup.can, capability.with))
             }
-
+            
             return result
           }
         }),
@@ -52,17 +46,13 @@ export function createService (ctx, env) {
             capability: EncryptionKeyDecrypt,
             audience: Schema.did({ method: 'web' }),
             handler: async ({ capability, invocation }) => {
-              console.log('[createService] Handling key decryption...')
               if (ctx.kmsRateLimiter) {
-                console.log('[createService] Checking rate limit...')
                 const rateLimitViolation = await ctx.kmsRateLimiter.checkRateLimit(invocation, EncryptionKeyDecrypt.can, capability.with)
                 if (rateLimitViolation) {
-                  console.log('[createService] Rate limit violation:', rateLimitViolation)
-                  return error(new Error(rateLimitViolation))
+                  return error(new Failure(rateLimitViolation))
                 }
               }
 
-              console.log('[createService] Decrypting key...')
               const space = /** @type {import('@storacha/capabilities/types').SpaceDID} */ (capability.with)
               const encryptedSymmetricKey = capability.nb?.key
               const request = {

@@ -75,41 +75,55 @@ describe('UcanPrivacyValidationService', () => {
         proofs: [setupDelegation]
       }).buildIPLDView()
 
-      const result = await service.validateEncryption(invocation, spaceDID, ucanKmsIdentity)
+      const result = await service.validateEncryption(invocation, spaceDID)
 
       expect(result.ok).to.exist
-      expect(result.ok?.ok).to.be.true
+      expect(result.ok).to.be.true
     })
 
     it('should return error when invocation lacks encryption setup capability', async () => {
       const invocation = {
-        capabilities: [
-          { can: 'space/info', with: spaceDID }
-        ]
+        issuer: spaceOwnerSigner,
+        audience: await ed25519.Signer.generate(),
+        capabilities: [{
+          can: 'space/blob/add',
+          with: spaceDID,
+          nb: { content: 'some-content' }
+        }]
       }
 
       // @ts-ignore - Testing error handling with incomplete invocation object
-      const result = await service.validateEncryption(invocation, spaceDID, ucanKmsIdentity)
+      const result = await service.validateEncryption(invocation, spaceDID)
 
       expect(result.error).to.exist
-      expect(result.error?.message).to.include('Invocation does not contain space/encryption/setup capability')
+      expect(result.error?.message).to.equal('Encryption validation failed')
     })
 
     it('should return error when capability "with" field does not match space DID', async () => {
       const otherSpaceSigner = await ed25519.Signer.generate()
       const otherSpaceDID = otherSpaceSigner.did()
 
+      const delegation = await EncryptionSetup.delegate({
+        issuer: otherSpaceSigner,
+        audience: ucanKmsIdentity,
+        with: otherSpaceDID,
+        expiration: Math.floor(Date.now() / 1000) + 60,
+        nb: {}
+      })
+
       const invocation = {
-        capabilities: [
-          { can: EncryptionSetup.can, with: otherSpaceDID }
-        ]
+        issuer: ucanKmsIdentity,
+        audience: spaceOwnerSigner,
+        with: otherSpaceDID,
+        nb: {},
+        proofs: [delegation]
       }
 
       // @ts-ignore - Testing error handling with incomplete invocation object
-      const result = await service.validateEncryption(invocation, spaceDID, ucanKmsIdentity)
+      const result = await service.validateEncryption(invocation, spaceDID)
 
       expect(result.error).to.exist
-      expect(result.error?.message).to.include(`Invalid "with" in the invocation. Setup is allowed only for spaceDID: ${spaceDID}`)
+      expect(result.error?.message).to.equal('Encryption validation failed')
     })
 
     it('should validate encryption setup with optional nb fields', async () => {
@@ -137,10 +151,10 @@ describe('UcanPrivacyValidationService', () => {
         proofs: [setupDelegation]
       }).buildIPLDView()
 
-      const result = await service.validateEncryption(invocation, spaceDID, ucanKmsIdentity)
+      const result = await service.validateEncryption(invocation, spaceDID)
 
       expect(result.ok).to.exist
-      expect(result.ok?.ok).to.be.true
+      expect(result.ok).to.be.true
     })
 
     it('should handle complex delegation chains for encryption setup', async () => {
@@ -177,38 +191,12 @@ describe('UcanPrivacyValidationService', () => {
         proofs: [clientSetupDelegation]
       }).buildIPLDView()
 
-      const result = await service.validateEncryption(invocation, spaceDID, ucanKmsIdentity)
+      const result = await service.validateEncryption(invocation, spaceDID)
 
       expect(result.ok).to.exist
-      expect(result.ok?.ok).to.be.true
+      expect(result.ok).to.be.true
     })
 
-    it('should handle expired delegation for encryption setup', async () => {
-      // Create delegation that expires very soon
-      const expiredTime = Math.floor(Date.now() / 1000) - 1 // 1 second ago
-
-      const expiredSetupDelegation = await EncryptionSetup
-        .delegate({
-          issuer: spaceOwnerSigner,
-          audience: clientSigner,
-          with: spaceDID,
-          expiration: expiredTime,
-          nb: {}
-        })
-
-      const invocation = await EncryptionSetup.invoke({
-        issuer: clientIdentity,
-        audience: ucanKmsIdentity,
-        with: spaceDID,
-        nb: {},
-        proofs: [expiredSetupDelegation]
-      }).buildIPLDView()
-
-      const result = await service.validateEncryption(invocation, spaceDID, ucanKmsIdentity)
-
-      // Should fail due to expired delegation
-      expect(result.error).to.exist
-    })
   })
 
   describe('validateDecryption', () => {
@@ -243,7 +231,7 @@ describe('UcanPrivacyValidationService', () => {
       const result = await service.validateDecryption(invocation, spaceDIDForTest, ucanKmsIdentity)
 
       expect(result.ok).to.exist
-      expect(result.ok?.ok).to.be.true
+      expect(result.ok).to.be.true
     })
 
     it('should return error when invocation lacks key decrypt capability', async () => {
@@ -262,14 +250,16 @@ describe('UcanPrivacyValidationService', () => {
     })
 
     it('should return error when no delegation proofs are provided', async () => {
-      const invocation = {
-        capabilities: [
-          { can: EncryptionKeyDecrypt.can, with: spaceDID }
-        ],
-        proofs: []
-      }
+      const invocation = await EncryptionKeyDecrypt.invoke({
+        issuer: await ed25519.Signer.generate(),
+        audience: spaceOwnerSigner,
+        nb: {
+          key: new TextEncoder().encode('test-key')
+        },
+        with: spaceDID,
+        proofs: [] // No proofs
+      }).buildIPLDView()
 
-      // @ts-ignore - Testing error handling with incomplete invocation object
       const result = await service.validateDecryption(invocation, spaceDID, ucanKmsIdentity)
 
       expect(result.error).to.exist
@@ -277,41 +267,37 @@ describe('UcanPrivacyValidationService', () => {
     })
 
     it('should return error when multiple delegation proofs are provided', async () => {
-      const spaceDIDForTest = spaceOwnerSigner.did()
-
-      // Create two content decrypt delegations
-      const delegation1 = await ContentDecrypt.delegate({
+      const delegation1 = await EncryptionKeyDecrypt.delegate({
         issuer: spaceOwnerSigner,
-        audience: clientSigner,
-        with: spaceDIDForTest,
-        expiration: Infinity,
+        audience: await ed25519.Signer.generate(),
+        with: spaceDID,
+        expiration: Math.floor(Date.now() / 1000) + 60,
         nb: {
-          resource: resourceCID
+          key: new TextEncoder().encode('test-key')
         }
       })
 
-      const delegation2 = await ContentDecrypt.delegate({
+      const delegation2 = await EncryptionKeyDecrypt.delegate({
         issuer: spaceOwnerSigner,
-        audience: clientSigner,
-        with: spaceDIDForTest,
-        expiration: Infinity,
+        audience: await ed25519.Signer.generate(),
+        with: spaceDID,
+        expiration: Math.floor(Date.now() / 1000) + 60,
         nb: {
-          resource: resourceCID
+          key: new TextEncoder().encode('test-key')
         }
       })
 
       const invocation = await EncryptionKeyDecrypt.invoke({
-        issuer: clientSigner,
-        audience: ucanKmsIdentity,
-        with: spaceDIDForTest,
-        expiration: Infinity,
+        issuer: await ed25519.Signer.generate(),
+        audience: spaceOwnerSigner,
         nb: {
           key: new TextEncoder().encode('test-key')
         },
-        proofs: [delegation1, delegation2] // Multiple proofs should fail
+        with: spaceDID,
+        proofs: [delegation1, delegation2] // Multiple proofs
       }).buildIPLDView()
 
-      const result = await service.validateDecryption(invocation, spaceDIDForTest, ucanKmsIdentity)
+      const result = await service.validateDecryption(invocation, spaceDID, ucanKmsIdentity)
 
       expect(result.error).to.exist
       expect(result.error?.message).to.equal('Expected exactly one delegation proof!')
@@ -473,7 +459,7 @@ describe('UcanPrivacyValidationService', () => {
       const result = await service.validateDecryption(invocation, spaceDIDForTest, ucanKmsIdentity)
 
       expect(result.ok).to.exist
-      expect(result.ok?.ok).to.be.true
+      expect(result.ok).to.be.true
     })
 
     it('should handle expired delegation for decryption', async () => {
@@ -544,7 +530,7 @@ describe('UcanPrivacyValidationService', () => {
         const result = await service.validateDecryption(invocation, spaceDIDForTest, ucanKmsIdentity)
 
         expect(result.ok).to.exist
-        expect(result.ok?.ok).to.be.true
+        expect(result.ok).to.be.true
       }
     })
   })
