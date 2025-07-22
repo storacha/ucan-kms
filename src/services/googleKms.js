@@ -1,5 +1,6 @@
 import * as z from 'zod'
 import * as CRC32 from 'crc-32'
+import { base64 } from 'multiformats/bases/base64'
 import { sanitizeSpaceDIDForKMSKeyId } from '../utils.js'
 import { AuditLogService } from './auditLog.js'
 import { error, ok, Failure } from '@ucanto/server'
@@ -267,6 +268,12 @@ export class GoogleKMSService {
       // Wrap sensitive token in SecureString for better memory hygiene
       secureToken = new SecureString(env.GOOGLE_KMS_TOKEN)
 
+      // Convert Uint8Array to base64 string for Google KMS
+      // Google KMS expects ciphertext as a base64-encoded string, but UCAN invocations 
+      // provide it as a Uint8Array. We need to convert it properly.
+      const binaryString = Array.from(request.encryptedSymmetricKey, byte => String.fromCharCode(byte)).join('')
+      const base64Ciphertext = btoa(binaryString)
+      
       const response = await fetch(kmsUrl, {
         method: 'POST',
         headers: {
@@ -274,7 +281,7 @@ export class GoogleKMSService {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          ciphertext: request.encryptedSymmetricKey
+          ciphertext: base64Ciphertext
         })
       })
 
@@ -291,10 +298,32 @@ export class GoogleKMSService {
       // Wrap decrypted key in SecureString for better memory hygiene
       secureDecryptedKey = new SecureString(result.plaintext)
 
-      // The plaintext is returned as a base64 encoded string, so we just return it
-      // Note: We need to return the raw string here as that's what the interface expects
-      // The sensitive data will be cleared when this function exits
-      const decryptedKey = secureDecryptedKey.getValue()
+      // Google KMS returns the decrypted data as base64, but the client expects 
+      // the original Uint8Array encoded with multibase. We need to:
+      // 1. Decode the base64 to get the original Uint8Array  
+      // 2. Re-encode with multibase for client compatibility
+      const rawBase64 = secureDecryptedKey.getValue()
+      
+      // Debug: Log the data we're working with
+      console.log('[KMS Debug] Raw base64 length:', rawBase64.length)
+      console.log('[KMS Debug] Raw base64 (first 50 chars):', rawBase64.substring(0, 50))
+      
+      // Convert base64 back to Uint8Array (this is the original combined key+IV)
+      // Use a more robust method for base64 → Uint8Array conversion
+      const decodedString = atob(rawBase64)
+      const binaryData = new Uint8Array(decodedString.length)
+      for (let i = 0; i < decodedString.length; i++) {
+        binaryData[i] = decodedString.charCodeAt(i)
+      }
+      
+      console.log('[KMS Debug] Binary data length:', binaryData.length)
+      console.log('[KMS Debug] Binary data first 10 bytes:', Array.from(binaryData.slice(0, 10)))
+      
+      // Use the same multiformats library as the client for proper encoding
+      const decryptedKey = base64.encode(binaryData)
+      console.log('[KMS Debug] Final multibase length:', decryptedKey.length)
+      console.log('[KMS Debug] Final multibase prefix:', decryptedKey.substring(0, 10))
+      
       // Success - log audit event
       this.auditLog.logKMSDecryptSuccess(
         request.space,

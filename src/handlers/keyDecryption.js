@@ -9,7 +9,7 @@ import { error, ok, Failure } from '@ucanto/server'
  * @param {import('@ucanto/interface').Invocation} invocation
  * @param {import('../api.types.js').Context} ctx
  * @param {import('../types/env.d.ts').Env} env
- * @returns {Promise<import('@ucanto/server').Result<{decryptedSymmetricKey: string}, import('@ucanto/server').Failure>>}
+ * @returns {Promise<import('@ucanto/server').Result<{decryptedSymmetricKey: string}, import('@ucanto/server').Failure>>} - decryptedSymmetricKey encoded with multiformats/bases/base64
  */
 export async function handleKeyDecryption (request, invocation, ctx, env) {
   const auditLog = new AuditLogService({

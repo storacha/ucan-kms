@@ -1,4 +1,4 @@
-import { access } from '@ucanto/validator'
+import { access, DID } from '@ucanto/validator'
 import { error, ok, Failure } from '@ucanto/server'
 import { Verifier } from '@ucanto/principal'
 import { EncryptionSetup, EncryptionKeyDecrypt, decrypt as ContentDecrypt } from '@storacha/capabilities/space'
@@ -7,6 +7,13 @@ import { AuditLogService } from './auditLog.js'
 /**
  * @import { UcanPrivacyValidationService } from './ucanValidation.types.js'
  */
+
+/**
+ * Authority is the identity that can authorize the decryption of content.
+ */
+const Authority = Verifier.parse(
+  DID.from('did:key:z6MkqdncRZ1wj8zxCTDUQ8CRT8NQWd63T7mZRvZUX8B7XDFi')
+).withDID(DID.from('did:web:web3.storage'))
 
 /**
  * UCAN Validation service implementation
@@ -78,66 +85,63 @@ export class UcanPrivacyValidationServiceImpl {
    * @returns {Promise<import('@ucanto/server').Result<boolean, import('@ucanto/server').Failure>>}
    */
   async validateDecryption (invocation, spaceDID, ucanKmsIdentity) {
+    console.log(' Decryption validation')
+    
     try {
       // Check invocation has the key decrypt capability
-      const decryptCapability = invocation.capabilities.find(
+      const decryptKeyCapability = invocation.capabilities.find(
         (cap) => cap.can === EncryptionKeyDecrypt.can
       )
-      if (!decryptCapability) {
+      if (!decryptKeyCapability) {
         const errorMsg = `Invocation does not contain ${EncryptionKeyDecrypt.can} capability!`
         this.auditLog.logUCANValidationFailure(spaceDID, 'decryption_invocation_capability', errorMsg)
         return error(new Failure(errorMsg))
       }
 
-      if (decryptCapability.with !== spaceDID) {
+      if (decryptKeyCapability.with !== spaceDID) {
         const errorMsg = `Invalid "with" in the invocation. Decryption is allowed only for files associated with spaceDID: ${spaceDID}!`
         this.auditLog.logUCANValidationFailure(spaceDID, 'decryption_resource', errorMsg)
         return error(new Failure(errorMsg))
       }
 
       // Check that we have exactly one delegation proof
-      if (invocation.proofs.length !== 1) {
-        const errorMsg = 'Expected exactly one delegation proof!'
+      // TODO: remove it - we need to pass more than 1 proof, otherwise the chain is not validated by the ucanto server and we cant access the handler
+      // if (invocation.proofs.length !== 1) {
+      //   const errorMsg = 'Expected exactly one delegation proof!'
+      //   this.auditLog.logUCANValidationFailure(spaceDID, 'decryption_proof', errorMsg)
+      //   return error(new Failure(errorMsg))
+      // }
+
+      // Find proofs that contain ContentDecrypt capability for the correct space
+      const contentDecryptProofs = invocation.proofs.filter(proof => {
+        const delegation = /** @type {import('@ucanto/interface').Delegation} */(proof)
+        const now = Math.floor(Date.now() / 1000)
+        return delegation.expiration > now &&
+          delegation.capabilities.some(capability =>
+            capability.can === ContentDecrypt.can &&
+            capability.with === spaceDID
+          )
+      })
+
+      if (contentDecryptProofs.length === 0) {
+        const errorMsg = 'No valid ContentDecrypt delegation found in proofs!'
         this.auditLog.logUCANValidationFailure(spaceDID, 'decryption_proof', errorMsg)
         return error(new Failure(errorMsg))
       }
 
-      const delegation = /** @type {import('@ucanto/interface').Delegation} */ (invocation.proofs[0])
-
-      // Check delegation contains space/content/decrypt capability
-      if (
-        !delegation.capabilities.some(
-          (c) => c.can === ContentDecrypt.can
-        )
-      ) {
-        const errorMsg = `Delegation does not contain ${ContentDecrypt.can} capability!`
-        this.auditLog.logUCANValidationFailure(spaceDID, 'decryption_delegation_capability', errorMsg)
-        return error(new Failure(errorMsg))
-      }
-
-      // Check delegation is for the correct space
-      if (
-        !delegation.capabilities.some(
-          (c) => c.with === spaceDID && c.can === ContentDecrypt.can
-        )
-      ) {
-        const errorMsg = `Invalid "with" in the delegation. Decryption is allowed only for files associated with spaceDID: ${spaceDID}!`
-        this.auditLog.logUCANValidationFailure(spaceDID, 'decryption_with', errorMsg)
-        return error(new Failure(errorMsg))
-      }
-
       // Check that the invocation issuer matches the delegation audience
-      if (invocation.issuer.did() !== delegation.audience.did()) {
+      const decryptDelegation = /** @type {import('@ucanto/interface').Delegation} */(contentDecryptProofs[0])
+      if (invocation.issuer.did() !== decryptDelegation.audience.did()) {
         const errorMsg = 'The invoker must be equal to the delegated audience!'
         this.auditLog.logUCANValidationFailure(spaceDID, 'decryption_audience', errorMsg)
         return error(new Failure(errorMsg))
       }
-
-      // Validate the content decrypt delegation authorization
-      const authorization = await access(/** @type {any} */(delegation), {
+     
+      // Validate the clean invocation has proper authorization to decrypt content
+      const authorization = await access(/** @type {any} */(decryptDelegation), {
         principal: Verifier,
         capability: ContentDecrypt,
-        authority: ucanKmsIdentity,
+        authority: Authority,
         validateAuthorization: () => ok({})
       })
 

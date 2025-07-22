@@ -46,6 +46,7 @@ export function createService (ctx, env) {
             capability: EncryptionKeyDecrypt,
             audience: Schema.did({ method: 'web' }),
             handler: async ({ capability, invocation }) => {
+              console.log('Key decrypt invoked')
               if (ctx.kmsRateLimiter) {
                 const rateLimitViolation = await ctx.kmsRateLimiter.checkRateLimit(invocation, EncryptionKeyDecrypt.can, capability.with)
                 if (rateLimitViolation) {

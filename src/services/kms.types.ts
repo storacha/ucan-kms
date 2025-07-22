@@ -38,6 +38,7 @@ export interface KMSService {
 
   /**
    * Decrypts a symmetric key using the space's KMS private key
+   * @returns The decrypted key encoded using multiformats/bases/base64
    */
   decryptSymmetricKey(
     request: DecryptionKeyRequest,

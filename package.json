@@ -69,6 +69,7 @@
     "@ucanto/transport": "9.2.0",
     "@ucanto/validator": "9.0.3",
     "crc-32": "^1.2.2",
+    "multiformats": "^13.3.7",
     "zod": "^4.0.5"
   }
 }
