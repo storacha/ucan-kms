@@ -9,11 +9,9 @@ import * as CAR from '@ucanto/transport/car'
  */
 export function createServer (ctx, service) {
   return Server.create({
-    id: ctx.ucanKmsSigner,
+    id: ctx.ucanKmsSigner.withDID(ctx.ucanKmsIdentity.did()),
     codec: CAR.inbound,
     service,
-    catch: err => console.error(err),
-    // TODO: wire into revocations
     validateAuthorization: () => ({ ok: {} })
   })
 }

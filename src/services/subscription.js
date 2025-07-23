@@ -1,5 +1,5 @@
-import { ok, error } from '@ucanto/validator'
 import { AuditLogService } from './auditLog.js'
+import { error, ok, Failure } from '@ucanto/server'
 
 /**
  * @import { SubscriptionStatusService } from './subscription.types.js'
@@ -21,7 +21,10 @@ export class PlanSubscriptionServiceImpl {
       serviceName: 'subscription-service',
       environment: options.environment || 'unknown'
     })
-    this.auditLog.logServiceInitialization('PlanSubscriptionService', true)
+    // Only log service initialization in development
+    if (process.env.NODE_ENV === 'development') {
+      this.auditLog.logServiceInitialization('PlanSubscriptionService', true)
+    }
   }
 
   /**
@@ -29,7 +32,7 @@ export class PlanSubscriptionServiceImpl {
    *
    * @param {import('@storacha/capabilities/types').SpaceDID} space - The space DID to check
    * @param {import('../types/env.js').Env } env - Environment configuration
-   * @returns {Promise<import('@ucanto/client').Result<{ ok: boolean }, Error>>}
+   * @returns {Promise<import('@ucanto/server').Result<{ ok: boolean }, import('@ucanto/server').Failure>>}
    */
   async isProvisioned (space, env) {
     try {
@@ -61,16 +64,15 @@ export class PlanSubscriptionServiceImpl {
       })
       return ok({ ok: true })
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : String(err)
+      console.error('[isProvisioned] something went wrong:', err)
+
       this.auditLog.logSecurityEvent('subscription_plan_service_failure', {
         operation: 'subscription_check',
         status: 'failure',
-        error: errorMessage,
-        metadata: {
-          reason: 'service_not_configured'
-        }
+        error: err instanceof Error ? err.message : String(err) 
       })
-      return error(errorMessage)
+      // Generic error message must be returned to the client to avoid leaking information
+      return error(new Failure('Subscription validation failed'))
     }
   }
 }

@@ -1,4 +1,4 @@
-import { Result } from "@ucanto/client";
+import { Result } from "@ucanto/server";
 
 export interface UcanPrivacyValidationService {
   /**
@@ -7,14 +7,12 @@ export interface UcanPrivacyValidationService {
    *
    * @param invocation - The UCAN invocation to validate
    * @param spaceDID - The space DID that should match the invocation
-   * @param ucanKmsIdentity - The ucanKms identity for authorization
-   * @returns Promise with the validation result or error
+   * @returns Promise with the validation result
    */
   validateEncryption(
     invocation: import("@ucanto/interface").Invocation,
     spaceDID: import("@storacha/capabilities/types").SpaceDID,
-    ucanKmsIdentity: import("@ucanto/interface").Verifier,
-  ): Promise<Result<{ ok: boolean }, Error>>;
+  ): Promise<Result<boolean, import("@ucanto/server").Failure>>;
 
   /**
    * Validates a decrypt invocation and its proofs.
@@ -26,11 +24,11 @@ export interface UcanPrivacyValidationService {
    * @param invocation - The UCAN invocation to validate
    * @param spaceDID - The space DID that should match the invocation
    * @param ucanKmsIdentity - The ucanKms identity for authorization
-   * @returns Promise with the validation result or error
+   * @returns Promise with the validation result
    */
   validateDecryption(
     invocation: import("@ucanto/interface").Invocation,
     spaceDID: import("@storacha/capabilities/types").SpaceDID,
     ucanKmsIdentity: import("@ucanto/interface").Verifier,
-  ): Promise<Result<{ ok: boolean }, Error>>;
+  ): Promise<Result<boolean, import("@ucanto/server").Failure>>;
 }

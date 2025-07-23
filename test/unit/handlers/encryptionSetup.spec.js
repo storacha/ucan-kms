@@ -114,7 +114,7 @@ describe('Encryption Setup Handler', () => {
     const result = await handleEncryptionSetup(mockRequest, mockInvocation, mockCtx, mockEnv)
     
     assert(!result.ok)
-    assert.equal(result.error?.message, 'Encryption setup is not enabled')
+    assert.equal(result.error.message, 'Encryption setup is not enabled')
     
     // Verify audit log was called with error
     assert(auditLogStub.calledWith(
@@ -128,12 +128,13 @@ describe('Encryption Setup Handler', () => {
   })
 
   it('should return error when ucanKmsIdentity is not configured', async () => {
-    mockCtx.ucanKmsIdentity = null
+    mockEnv.FF_DECRYPTION_ENABLED = 'true'
+    delete mockCtx.ucanKmsIdentity
     
     const result = await handleEncryptionSetup(mockRequest, mockInvocation, mockCtx, mockEnv)
     
     assert(!result.ok)
-    assert.equal(result.error?.message, 'Encryption setup not available - ucanKms identity not configured')
+    assert.equal(result.error.message, 'Encryption setup not available - ucanKms identity not configured')
     
     // Verify audit log was called with error
     assert(auditLogStub.calledWith(
@@ -147,53 +148,85 @@ describe('Encryption Setup Handler', () => {
   })
 
   it('should return error when validation fails', async () => {
-    const validationError = new Error('Invalid request')
-    validateEncryptionStub.resolves({ error: validationError })
+    mockEnv.FF_DECRYPTION_ENABLED = 'true'
+    mockCtx.ucanKmsIdentity = 'mock-identity'
+    
+    // Add cid to mockInvocation for audit logging
+    mockInvocation.cid = {
+      toString: () => 'mock-invocation-cid'
+    }
+    
+    const { Failure } = await import('@ucanto/server')
+    mockCtx.ucanPrivacyValidationService = {
+      validateEncryption: sinon.stub().resolves({ error: new Failure('Invalid request') })
+    }
     
     const result = await handleEncryptionSetup(mockRequest, mockInvocation, mockCtx, mockEnv)
     
     assert(!result.ok)
-    assert.equal(result.error?.message, 'Invalid request')
+    assert.equal(result.error.message, 'Invalid request')
     
     // Verify audit log was called with error
     assert(auditLogStub.calledWith(
       mockRequest.space,
       EncryptionSetup.can,
       false,
-      'UCAN validation failed',
-      undefined,
+      'Invalid request',
+      'mock-invocation-cid',
       sinon.match.number
     ))
   })
 
   it('should return error when space is not provisioned', async () => {
-    const provisioningError = new Error('Space not provisioned')
-    isProvisionedStub.resolves({ error: provisioningError })
+    mockEnv.FF_DECRYPTION_ENABLED = 'true'
+    mockCtx.ucanKmsIdentity = 'mock-identity'
+    
+    // Add cid to mockInvocation for audit logging
+    mockInvocation.cid = {
+      toString: () => 'mock-invocation-cid-2'
+    }
+    
+    const { Failure } = await import('@ucanto/server')
+    mockCtx.ucanPrivacyValidationService = {
+      validateEncryption: sinon.stub().resolves({ ok: true })
+    }
+    mockCtx.subscriptionStatusService = {
+      isProvisioned: sinon.stub().resolves({ error: new Failure('Space not provisioned') })
+    }
     
     const result = await handleEncryptionSetup(mockRequest, mockInvocation, mockCtx, mockEnv)
     
     assert(!result.ok)
-    assert.equal(result.error?.message, 'Space not provisioned')
+    assert.equal(result.error.message, 'Space not provisioned')
     
     // Verify audit log was called with error
     assert(auditLogStub.calledWith(
       mockRequest.space,
       EncryptionSetup.can,
       false,
-      'Subscription validation failed',
-      undefined,
+      'Subscription validation failed: Space not provisioned',
+      'mock-invocation-cid-2',
       sinon.match.number
     ))
   })
 
   it('should handle errors during key setup', async () => {
-    const setupError = new Error('Failed to setup key')
-    kmsServiceStub.resolves({ error: setupError })
+    mockEnv.FF_DECRYPTION_ENABLED = 'true'
+    mockCtx.ucanKmsIdentity = 'mock-identity'
+    mockCtx.ucanPrivacyValidationService = {
+      validateEncryption: sinon.stub().resolves({ ok: true })
+    }
+    mockCtx.subscriptionStatusService = {
+      isProvisioned: sinon.stub().resolves({ ok: { ok: true } })
+    }
+    mockCtx.kms = {
+      setupKeyForSpace: sinon.stub().resolves({ error: new Error('Failed to setup key') })
+    }
     
     const result = await handleEncryptionSetup(mockRequest, mockInvocation, mockCtx, mockEnv)
     
     assert(!result.ok)
-    assert.equal(result.error?.message, 'Failed to setup key')
+    assert.equal(result.error.message, 'Failed to setup key')
     
     // Verify audit log was called with error
     assert(auditLogStub.calledWith(

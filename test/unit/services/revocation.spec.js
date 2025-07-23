@@ -44,21 +44,21 @@ describe('RevocationStatusService', () => {
       const result = await service.checkStatus(mockProofs, env)
 
       expect(result.ok).to.exist
-      expect(result.ok?.ok).to.be.true
+      expect(result.ok).to.be.true
     })
 
     it('should return success when revocation service URL is configured (current implementation)', async () => {
       const result = await service.checkStatus(mockProofs, env)
 
       expect(result.ok).to.exist
-      expect(result.ok?.ok).to.be.true
+      expect(result.ok).to.be.true
     })
 
     it('should handle empty proofs array', async () => {
       const result = await service.checkStatus([], env)
 
       expect(result.ok).to.exist
-      expect(result.ok?.ok).to.be.true
+      expect(result.ok).to.be.true
     })
 
     it('should handle null or undefined proofs gracefully', async () => {
@@ -68,9 +68,9 @@ describe('RevocationStatusService', () => {
       const resultUndefined = await service.checkStatus(undefined, env)
 
       expect(resultNull.ok).to.exist
-      expect(resultNull.ok?.ok).to.be.true
+      expect(resultNull.ok).to.be.true
       expect(resultUndefined.ok).to.exist
-      expect(resultUndefined.ok?.ok).to.be.true
+      expect(resultUndefined.ok).to.be.true
     })
 
     it('should handle errors gracefully', async () => {
@@ -84,8 +84,8 @@ describe('RevocationStatusService', () => {
           throw new Error('Service error')
         } catch (err) {
           // This should trigger the error handling logic
-          const { error } = await import('@ucanto/validator')
-          return error(err instanceof Error ? err.message : String(err))
+          const { error, Failure } = await import('@ucanto/server')
+          return error(new Failure(err instanceof Error ? err.message : String(err)))
         }
       }
 
@@ -106,8 +106,8 @@ describe('RevocationStatusService', () => {
           throw new Error('String error')
         } catch (err) {
           // This should trigger the error handling logic
-          const { error } = await import('@ucanto/validator')
-          return error(err instanceof Error ? err.message : String(err))
+          const { error, Failure } = await import('@ucanto/server')
+          return error(new Failure(err instanceof Error ? err.message : String(err)))
         }
       }
 
@@ -125,8 +125,7 @@ describe('RevocationStatusService', () => {
       expect(result.ok || result.error).to.exist
 
       if (result.ok) {
-        expect(result.ok).to.have.property('ok')
-        expect(result.ok.ok).to.be.a('boolean')
+        expect(result.ok).to.be.a('boolean')
       }
     })
 
@@ -137,7 +136,7 @@ describe('RevocationStatusService', () => {
       const result = await service.checkStatus(mockProofs, envWithoutUrl)
 
       expect(result.ok).to.exist
-      expect(result.ok?.ok).to.be.true
+      expect(result.ok).to.be.true
     })
   })
 })

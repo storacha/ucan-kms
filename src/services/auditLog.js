@@ -350,4 +350,40 @@ export class AuditLogService {
       metadata: { identifier, limitType, ...metadata }
     })
   }
+
+  /**
+   * Log subscription service events
+   * @param {string} eventType - Type of subscription event
+   * @param {SpaceDID} [space] - Space DID
+   * @param {string} [status] - Operation status
+   * @param {string} [error] - Error message if failed
+   * @param {Object} [metadata] - Additional context
+   */
+  logSubscriptionEvent (eventType, space, status, error, metadata = {}) {
+    this.logSecurityEvent(eventType, {
+      space,
+      operation: 'subscription_check',
+      status,
+      error,
+      metadata
+    })
+  }
+
+  /**
+   * Log revocation service events  
+   * @param {string} eventType - Type of revocation event
+   * @param {SpaceDID} [space] - Space DID
+   * @param {string} [status] - Operation status
+   * @param {string} [error] - Error message if failed
+   * @param {Object} [metadata] - Additional context
+   */
+  logRevocationEvent (eventType, space, status, error, metadata = {}) {
+    this.logSecurityEvent(eventType, {
+      space,
+      operation: 'revocation_check',
+      status,
+      error,
+      metadata
+    })
+  }
 }

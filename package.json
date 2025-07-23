@@ -58,6 +58,8 @@
     "wrangler": "^4.25.0"
   },
   "dependencies": {
+    "@ipld/car": "^5.4.2",
+    "@ipld/dag-cbor": "^9.2.4",
     "@storacha/capabilities": "1.8.0",
     "@ucanto/client": "9.0.1",
     "@ucanto/core": "10.4.0",
@@ -66,7 +68,8 @@
     "@ucanto/server": "10.2.0",
     "@ucanto/transport": "9.2.0",
     "@ucanto/validator": "9.0.3",
-    "fast-crc32c": "^2.0.0",
+    "crc-32": "^1.2.2",
+    "multiformats": "^13.3.7",
     "zod": "^4.0.5"
   }
 }

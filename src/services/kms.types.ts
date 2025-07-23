@@ -1,4 +1,4 @@
-import { Result } from "@ucanto/client";
+import { Result } from "@ucanto/server";
 import { SpaceDID } from "@storacha/capabilities/types";
 import { Env } from "../types/env.js";
 
@@ -34,13 +34,14 @@ export interface KMSService {
   setupKeyForSpace(
     request: EncryptionSetupRequest,
     env: Env,
-  ): Promise<Result<EncryptionSetupResult, Error>>;
+  ): Promise<Result<EncryptionSetupResult, import("@ucanto/server").Failure>>;
 
   /**
    * Decrypts a symmetric key using the space's KMS private key
+   * @returns The decrypted key encoded using multiformats/bases/base64
    */
   decryptSymmetricKey(
     request: DecryptionKeyRequest,
     env: Env,
-  ): Promise<Result<{ decryptedKey: string }, Error>>;
+  ): Promise<Result<{ decryptedKey: string }, import("@ucanto/server").Failure>>;
 }

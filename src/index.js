@@ -18,6 +18,14 @@ export default {
    * @returns
    */
   async fetch (request, env, ctx) {
+    // UCAN Server needs to handle OPTIONS requests
+    if (request.method === 'OPTIONS') {
+      const headers = new Headers()
+      headers.set('Access-Control-Allow-Origin', '*')
+      headers.set('Access-Control-Allow-Methods', 'POST, OPTIONS')
+      headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+      return new Response(null, { headers, status: 204 })
+    }
     if (request.method !== 'POST' || new URL(request.url).pathname !== '/') {
       // Not supported
       return new Response(null, { status: 405 })
@@ -32,34 +40,43 @@ export default {
 
     try {
       // Prepare context
-      const ucanKmsSigner = ed25519.Signer.parse(env.UCAN_KMS_PRINCIPAL_KEY)
-      const newCtx = {
-        ...ctx,
-        ucanKmsSigner,
-        ucanKmsIdentity: ucanKmsSigner.withDID(
-          UcantoSchema.DID.from(env.UCAN_KMS_SERVICE_DID)
-        ),
-        kms: new GoogleKMSService(env, { auditLog }),
-        kmsRateLimiter: new KmsRateLimiter(env, { auditLog }),
-        revocationStatusService: new RevocationStatusServiceImpl({ auditLog }),
-        subscriptionStatusService: new PlanSubscriptionServiceImpl({ auditLog }),
-        ucanPrivacyValidationService: new UcanPrivacyValidationServiceImpl({ auditLog })
-      }
+      const ucanKmsSigner = ed25519.Signer.parse(env.UCAN_KMS_PRINCIPAL_KEY);
+      const ucanKmsIdentity = ucanKmsSigner.withDID(
+        UcantoSchema.DID.from(env.UCAN_KMS_SERVICE_DID)
+      );
+            
+      // Add services to the existing context
+      ctx.ucanKmsSigner = ucanKmsSigner;
+      ctx.ucanKmsIdentity = ucanKmsIdentity;
+      ctx.kms = new GoogleKMSService(env, { auditLog, environment: env.ENVIRONMENT });
+      ctx.kmsRateLimiter = new KmsRateLimiter(env, { auditLog });
+      ctx.revocationStatusService = new RevocationStatusServiceImpl({ auditLog });
+      ctx.subscriptionStatusService = new PlanSubscriptionServiceImpl({ auditLog });
+      ctx.ucanPrivacyValidationService = new UcanPrivacyValidationServiceImpl({ auditLog });
 
       // Create service handler and ucan server
-      const service = ctx.service ?? createService(newCtx, env)
-      const server = ctx.server ?? createServer(newCtx, service)
+      const service = ctx.service ?? createService(ctx, env)
+      const server = ctx.server ?? createServer(ctx, service)
 
-      // Process request
-      const { headers, body, status } = await server.request({
+      const { body, headers } = await server.request({
         body: new Uint8Array(await request.arrayBuffer()),
-        headers: Object.fromEntries(request.headers)
+        headers: Object.fromEntries(request.headers),
       })
-
-      return new Response(body, { headers, status: status ?? 200 })
+      
+      // Add CORS headers to the response
+      const responseHeaders = new Headers(headers)
+      responseHeaders.set('Access-Control-Allow-Origin', '*')
+      responseHeaders.set('Access-Control-Allow-Methods', 'POST, OPTIONS')
+      responseHeaders.set('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+      
+      return new Response(body, { status: 200, headers: responseHeaders })
     } catch (error) {
       console.error('Error processing request:', error)
-      return new Response('Internal Server Error', { status: 500 })
+      const errorHeaders = new Headers()
+      errorHeaders.set('Access-Control-Allow-Origin', '*')
+      errorHeaders.set('Access-Control-Allow-Methods', 'POST, OPTIONS')
+      errorHeaders.set('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+      return new Response('Internal Server Error', { status: 500, headers: errorHeaders })
     }
   }
 }
