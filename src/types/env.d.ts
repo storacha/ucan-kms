@@ -25,11 +25,6 @@ export interface Env {
 
   // Google KMS
   /**
-   * Google KMS base URL
-   */
-  GOOGLE_KMS_BASE_URL: string;
-
-  /**
    * Google KMS project ID
    */
   GOOGLE_KMS_PROJECT_ID: string;
@@ -45,9 +40,15 @@ export interface Env {
   GOOGLE_KMS_KEYRING_NAME: string;
 
   /**
-   * Google KMS token
+   * Google KMS access token (optional - used if provided)
    */
-  GOOGLE_KMS_TOKEN: string;
+  GOOGLE_KMS_TOKEN?: string;
+
+  /**
+   * Google KMS service account JSON (optional - used if GOOGLE_KMS_TOKEN not provided)
+   * Use this method for production instead of GOOGLE_KMS_TOKEN
+   */
+  GOOGLE_KMS_SERVICE_ACCOUNT_JSON?: string;
 
   // Revocation status service
   /**
