@@ -20,7 +20,7 @@ wrangler-*.log
 Thumbs.db
 
 # Env files
-.env
+*.env
 .env.*
 
 # VSCode
@@ -49,3 +49,6 @@ coverage/
 # Ignore test coverage reports
 coverage/
 .nyc_output/
+
+#
+.dev.vars
