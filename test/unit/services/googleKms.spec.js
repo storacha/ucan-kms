@@ -27,7 +27,6 @@ describe('GoogleKMSService', () => {
       UCAN_KMS_SERVICE_DID: 'did:web:test.example.com',
       FF_DECRYPTION_ENABLED: 'true',
       FF_KMS_RATE_LIMITER_ENABLED: 'true',
-      GOOGLE_KMS_BASE_URL: 'https://cloudkms.googleapis.com/v1',
       GOOGLE_KMS_PROJECT_ID: 'test-project',
       GOOGLE_KMS_LOCATION: 'global',
       GOOGLE_KMS_KEYRING_NAME: 'test-keyring',
@@ -367,7 +366,6 @@ describe('GoogleKMSService', () => {
       UCAN_KMS_SERVICE_DID: 'did:web:test.example.com',
       FF_DECRYPTION_ENABLED: 'true',
       FF_KMS_RATE_LIMITER_ENABLED: 'true',
-      GOOGLE_KMS_BASE_URL: 'https://cloudkms.googleapis.com/v1',
       GOOGLE_KMS_PROJECT_ID: 'test-project',
       GOOGLE_KMS_LOCATION: 'global',
       GOOGLE_KMS_KEYRING_NAME: 'test-keyring',
@@ -383,22 +381,12 @@ describe('GoogleKMSService', () => {
       expect(() => new GoogleKMSService(validEnv)).to.not.throw()
     })
 
-    it('should throw error for invalid GOOGLE_KMS_BASE_URL', () => {
-      const invalidEnv = createTestEnv({
-        GOOGLE_KMS_BASE_URL: 'https://malicious-site.com'
-      })
-
-      expect(() => new GoogleKMSService(invalidEnv))
-        .to.throw('Must be an official Google Cloud KMS endpoint')
-    })
-
     it('should throw error for invalid GOOGLE_KMS_PROJECT_ID format', () => {
       const invalidEnv = {
         UCAN_KMS_PRINCIPAL_KEY: 'test-principal-key',
         UCAN_KMS_SERVICE_DID: 'did:web:test.example.com',
         FF_DECRYPTION_ENABLED: 'true',
         FF_KMS_RATE_LIMITER_ENABLED: 'true',
-        GOOGLE_KMS_BASE_URL: 'https://cloudkms.googleapis.com/v1',
         GOOGLE_KMS_PROJECT_ID: 'X',
         GOOGLE_KMS_LOCATION: 'global',
         GOOGLE_KMS_KEYRING_NAME: 'test-keyring',
@@ -415,7 +403,6 @@ describe('GoogleKMSService', () => {
         UCAN_KMS_SERVICE_DID: 'did:web:test.example.com',
         FF_DECRYPTION_ENABLED: 'true',
         FF_KMS_RATE_LIMITER_ENABLED: 'true',
-        GOOGLE_KMS_BASE_URL: 'https://cloudkms.googleapis.com/v1',
         GOOGLE_KMS_PROJECT_ID: 'Invalid_Project_ID',
         GOOGLE_KMS_LOCATION: 'global',
         GOOGLE_KMS_KEYRING_NAME: 'test-keyring',
@@ -432,7 +419,6 @@ describe('GoogleKMSService', () => {
         UCAN_KMS_SERVICE_DID: 'did:web:test.example.com',
         FF_DECRYPTION_ENABLED: 'true',
         FF_KMS_RATE_LIMITER_ENABLED: 'true',
-        GOOGLE_KMS_BASE_URL: 'https://cloudkms.googleapis.com/v1',
         GOOGLE_KMS_PROJECT_ID: 'test-project',
         GOOGLE_KMS_LOCATION: '',
         GOOGLE_KMS_KEYRING_NAME: 'test-keyring',
@@ -449,7 +435,6 @@ describe('GoogleKMSService', () => {
         UCAN_KMS_SERVICE_DID: 'did:web:test.example.com',
         FF_DECRYPTION_ENABLED: 'true',
         FF_KMS_RATE_LIMITER_ENABLED: 'true',
-        GOOGLE_KMS_BASE_URL: 'https://cloudkms.googleapis.com/v1',
         GOOGLE_KMS_PROJECT_ID: 'test-project',
         GOOGLE_KMS_LOCATION: 'global',
         GOOGLE_KMS_KEYRING_NAME: '',
@@ -466,7 +451,6 @@ describe('GoogleKMSService', () => {
         UCAN_KMS_SERVICE_DID: 'did:web:test.example.com',
         FF_DECRYPTION_ENABLED: 'true',
         FF_KMS_RATE_LIMITER_ENABLED: 'true',
-        GOOGLE_KMS_BASE_URL: 'https://cloudkms.googleapis.com/v1',
         GOOGLE_KMS_PROJECT_ID: 'test-project',
         GOOGLE_KMS_LOCATION: 'global',
         GOOGLE_KMS_KEYRING_NAME: 'test-keyring',
@@ -482,7 +466,7 @@ describe('GoogleKMSService', () => {
 
       validRegions.forEach(region => {
         const validEnv = createTestEnv({
-          GOOGLE_KMS_BASE_URL: `https://cloudkms.googleapis.com/v1/projects/test-project/locations/${region}`,
+          GOOGLE_KMS_PROJECT_ID: 'test-project',
           GOOGLE_KMS_LOCATION: region
         })
 
@@ -496,7 +480,6 @@ describe('GoogleKMSService', () => {
         UCAN_KMS_SERVICE_DID: 'did:web:test.example.com',
         FF_DECRYPTION_ENABLED: 'true',
         FF_KMS_RATE_LIMITER_ENABLED: 'true',
-        GOOGLE_KMS_BASE_URL: 'invalid-url',
         GOOGLE_KMS_PROJECT_ID: 'X',
         GOOGLE_KMS_LOCATION: '',
         GOOGLE_KMS_KEYRING_NAME: '',
@@ -511,8 +494,9 @@ describe('GoogleKMSService', () => {
         expect(error).to.be.an.instanceof(Error)
         expect(error.message).to.include('Google KMS configuration validation failed')
         // Should contain multiple error details
-        expect(error.message).to.include('GOOGLE_KMS_BASE_URL')
         expect(error.message).to.include('GOOGLE_KMS_PROJECT_ID')
+        expect(error.message).to.include('GOOGLE_KMS_LOCATION')
+        expect(error.message).to.include('GOOGLE_KMS_KEYRING_NAME')
       }
     })
   })
