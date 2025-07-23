@@ -16,6 +16,18 @@ import { error, ok, Failure } from '@ucanto/server'
 const GOOGLE_KMS_BASE_URL = 'https://cloudkms.googleapis.com/v1'
 
 /**
+ * Request timeout configurations by operation type
+ */
+const TIMEOUTS = {
+  TOKEN_REQUEST: 15000,    // Authentication is critical path
+  KMS_DECRYPT: 30000,      // Decrypt operations are user-facing
+  KMS_ENCRYPT: 30000,      // Same priority as decrypt  
+  KEY_CREATION: 60000,     // Key creation can be slower
+  KEY_LOOKUP: 20000,       // Metadata operations should be fast
+  KEY_VERSIONS: 20000      // Version listing should be fast
+}
+
+/**
  * @typedef {Object} AccessTokenAuth
  * @property {'access_token'} type - Authentication type
  * @property {string} token - Access token
@@ -24,7 +36,7 @@ const GOOGLE_KMS_BASE_URL = 'https://cloudkms.googleapis.com/v1'
 /**
  * @typedef {Object} ServiceAccountCredentials
  * @property {string} client_email - Service account email
- * @property {string} private_key - Private key for signing
+ * @property {SecureString} private_key - Private key for signing (wrapped in SecureString)
  * @property {string} project_id - Project ID
  */
 
@@ -183,9 +195,14 @@ export class GoogleKMSService {
       console.log('Using service account JSON authentication')
       try {
         const credentials = JSON.parse(env.GOOGLE_KMS_SERVICE_ACCOUNT_JSON)
+        // Protect private key in memory
+        const securePrivateKey = new SecureString(credentials.private_key)
         return {
           type: 'service_account',
-          credentials: credentials
+          credentials: {
+            ...credentials,
+            private_key: securePrivateKey // Wrap in SecureString
+          }
         }
       } catch (parseError) {
         throw new Error('Invalid GOOGLE_KMS_SERVICE_ACCOUNT_JSON: ' + (parseError instanceof Error ? parseError.message : String(parseError)))
@@ -240,10 +257,12 @@ export class GoogleKMSService {
     const now = Math.floor(Date.now() / 1000)
     const payload = {
       iss: credentials.client_email,
-      scope: 'https://www.googleapis.com/auth/cloud-platform',
+      scope: 'https://www.googleapis.com/auth/cloudkms',
       aud: 'https://oauth2.googleapis.com/token',
       exp: now + 3600, // 1 hour
-      iat: now
+      iat: now,
+      jti: crypto.randomUUID(), // Prevent replay attacks
+      sub: credentials.client_email // Clear subject identity
     }
     
     // Create JWT (simplified implementation for Workers)
@@ -258,12 +277,19 @@ export class GoogleKMSService {
       body: new URLSearchParams({
         grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
         assertion: jwt
-      })
+      }),
+      signal: AbortSignal.timeout(TIMEOUTS.TOKEN_REQUEST)
     })
     
     if (!tokenResponse.ok) {
       const errorText = await tokenResponse.text()
-      throw new Error(`Failed to get access token: ${tokenResponse.status} - ${errorText}`)
+      // Log detailed error internally for debugging
+      console.error('[_getServiceAccountAccessToken] Auth failed:', {
+        status: tokenResponse.status,
+        error: errorText
+      })
+      // Throw generic error to prevent information leakage
+      throw new Error('Failed to authenticate with Google Cloud KMS')
     }
     
     const tokenData = await tokenResponse.json()
@@ -275,10 +301,10 @@ export class GoogleKMSService {
    * @private
    * @param {Object} header - JWT header
    * @param {Object} payload - JWT payload  
-   * @param {string} privateKey - Private key for signing
+   * @param {SecureString} securePrivateKey - Private key for signing (wrapped in SecureString)
    * @returns {Promise<string>} JWT string
    */
-  async _createJWT(header, payload, privateKey) {
+  async _createJWT(header, payload, securePrivateKey) {
     const encoder = new TextEncoder()
     
     // Encode header and payload
@@ -286,14 +312,14 @@ export class GoogleKMSService {
     const encodedPayload = this._base64UrlEncode(JSON.stringify(payload))
     const toSign = `${encodedHeader}.${encodedPayload}`
     
-    // Import private key
-    const pemContents = privateKey
+    // Import private key from SecureString
+    const pemContents = new SecureString(securePrivateKey.getValue()
       .replace('-----BEGIN PRIVATE KEY-----', '')
       .replace('-----END PRIVATE KEY-----', '')
-      .replace(/\s/g, '')
-    
-    const binaryKey = Uint8Array.from(atob(pemContents), c => c.charCodeAt(0))
-    
+      .replace(/\s/g, ''))
+      
+    const binaryKey = Uint8Array.from(atob(pemContents.getValue()), c => c.charCodeAt(0))
+    pemContents.dispose()
     const cryptoKey = await crypto.subtle.importKey(
       'pkcs8',
       binaryKey,
@@ -383,7 +409,8 @@ export class GoogleKMSService {
 
       const authHeaders = await this._getAuthHeaders()
       const getResponse = await fetch(`${GOOGLE_KMS_BASE_URL}/${keyName}`, {
-        headers: authHeaders
+        headers: authHeaders,
+        signal: AbortSignal.timeout(TIMEOUTS.KEY_LOOKUP)
       })
 
       if (getResponse.ok) {
@@ -460,7 +487,6 @@ export class GoogleKMSService {
    */
   async decryptSymmetricKey(request, env) {
     const startTime = Date.now()
-    let secureToken = null
     let secureDecryptedKey = null
 
     try {
@@ -469,7 +495,7 @@ export class GoogleKMSService {
       const keyName = `projects/${env.GOOGLE_KMS_PROJECT_ID}/locations/${env.GOOGLE_KMS_LOCATION}/keyRings/${env.GOOGLE_KMS_KEYRING_NAME}/cryptoKeys/${sanitizedKeyId}`
 
       // Get the primary key version from KMS
-      const primaryVersionResult = await this._getPrimaryKeyVersion(keyName, env, request.space)
+      const primaryVersionResult = await this._getPrimaryKeyVersion(keyName, request.space)
       const primaryVersion = primaryVersionResult.primaryVersion
       const keyVersion = primaryVersion.split('/').pop() || 'unknown'
       const kmsUrl = `${GOOGLE_KMS_BASE_URL}/${primaryVersion}:asymmetricDecrypt`
@@ -486,7 +512,8 @@ export class GoogleKMSService {
         headers: authHeaders,
         body: JSON.stringify({
           ciphertext: base64Ciphertext
-        })
+        }),
+        signal: AbortSignal.timeout(TIMEOUTS.KMS_DECRYPT)
       })
 
       if (!response.ok) {
@@ -551,16 +578,16 @@ export class GoogleKMSService {
    *
    * @private
    * @param {string} keyName - The full KMS key name reference
-   * @param {import('../types/env.d.ts').Env} env - Environment configuration
    * @param {SpaceDID} space - The space DID for error messages
    * @returns {Promise<{ primaryVersion: string }>}
    */
-  async _getPrimaryKeyVersion(keyName, env, space) {
+  async _getPrimaryKeyVersion(keyName, space) {
     const startTime = Date.now()
     try {
       const authHeaders = await this._getAuthHeaders()
       const keyDataResponse = await fetch(`${GOOGLE_KMS_BASE_URL}/${keyName}`, {
-        headers: authHeaders
+        headers: authHeaders,
+        signal: AbortSignal.timeout(TIMEOUTS.KEY_LOOKUP)
       })
 
       if (!keyDataResponse.ok) {
@@ -584,7 +611,7 @@ export class GoogleKMSService {
       } else {
         // For asymmetric keys (ASYMMETRIC_DECRYPT, ASYMMETRIC_SIGN), there's no primary concept
         // We need to list the key versions and find an active one
-        const versionsResult = await this._getActiveKeyVersion(keyName, env, space)
+        const versionsResult = await this._getActiveKeyVersion(keyName, space)
         version = versionsResult.primaryVersion
       }
 
@@ -609,17 +636,17 @@ export class GoogleKMSService {
    *
    * @private
    * @param {string} keyName - The full KMS key name reference
-   * @param {import('../types/env.d.ts').Env} env - Environment configuration
    * @param {SpaceDID} space - The space DID for error messages
    * @returns {Promise<{ primaryVersion: string }>}
    */
-  async _getActiveKeyVersion(keyName, env, space) {
+  async _getActiveKeyVersion(keyName, space) {
     const startTime = Date.now()
     try {
       // List the key versions to find an enabled one
       const authHeaders = await this._getAuthHeaders()
       const versionsResponse = await fetch(`${GOOGLE_KMS_BASE_URL}/${keyName}/cryptoKeyVersions`, {
-        headers: authHeaders
+        headers: authHeaders,
+        signal: AbortSignal.timeout(TIMEOUTS.KEY_VERSIONS)
       })
 
       if (!versionsResponse.ok) {
@@ -675,8 +702,8 @@ export class GoogleKMSService {
   async _retrieveExistingPublicKey(keyName, env, space) {
     const startTime = Date.now()
     try {
-      const result = await this._getPrimaryKeyVersion(keyName, env, space)
-      return await this._fetchAndValidatePublicKey(result.primaryVersion, env, space)
+      const result = await this._getPrimaryKeyVersion(keyName, space)
+      return await this._fetchAndValidatePublicKey(result.primaryVersion, space)
     } catch (err) {
       this.auditLog.logKMSKeySetupFailure(
         space,
@@ -717,7 +744,8 @@ export class GoogleKMSService {
           versionTemplate: {
             algorithm: 'RSA_DECRYPT_OAEP_3072_SHA256'
           }
-        })
+        }),
+        signal: AbortSignal.timeout(TIMEOUTS.KEY_CREATION)
       })
 
       if (!createResponse.ok) {
@@ -733,7 +761,7 @@ export class GoogleKMSService {
       const primaryVersion = `${keyName}/cryptoKeyVersions/1`
 
       // Get the public key of the newly created key
-      return await this._fetchAndValidatePublicKey(primaryVersion, env, space)
+      return await this._fetchAndValidatePublicKey(primaryVersion, space)
     } catch (err) {
       this.auditLog.logKMSKeySetupFailure(
         space,
@@ -750,18 +778,18 @@ export class GoogleKMSService {
    *
    * @private
    * @param {string} keyVersionPath - The full key version path (e.g., projects/.../cryptoKeys/.../cryptoKeyVersions/1)
-   * @param {import('../types/env.d.ts').Env} env - Environment configuration
    * @param {SpaceDID} space - The space DID for error messages
    * @returns {Promise<EncryptionSetupResult>}
    */
-  async _fetchAndValidatePublicKey(keyVersionPath, env, space) {
+  async _fetchAndValidatePublicKey(keyVersionPath, space) {
     let securePem = null
     const startTime = Date.now()
     try {
       const publicKeyUrl = `${GOOGLE_KMS_BASE_URL}/${keyVersionPath}/publicKey`
       const authHeaders = await this._getAuthHeaders()
       const pubKeyResponse = await fetch(publicKeyUrl, {
-        headers: authHeaders
+        headers: authHeaders,
+        signal: AbortSignal.timeout(TIMEOUTS.KEY_LOOKUP)
       })
       if (!pubKeyResponse.ok) {
         const errorText = await pubKeyResponse.text()

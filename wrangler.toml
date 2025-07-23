@@ -8,7 +8,6 @@ command = "npm run build"
 # outdir = "dist"
 
 [vars]
-GOOGLE_KMS_BASE_URL = "https://cloudkms.googleapis.com/v1"
 GOOGLE_KMS_PROJECT_ID = "storacha-staging"
 GOOGLE_KMS_LOCATION = "global"
 GOOGLE_KMS_KEYRING_NAME = "ucan-kms-staging-keyring"
@@ -45,7 +44,6 @@ FF_DECRYPTION_ENABLED = "true"
 FF_KMS_RATE_LIMITER_ENABLED = "true"
 
 # Staging Environment-specific KMS CONFIG
-GOOGLE_KMS_BASE_URL = "https://cloudkms.googleapis.com/v1"
 GOOGLE_KMS_PROJECT_ID = "storacha-staging"
 GOOGLE_KMS_LOCATION = "global"
 GOOGLE_KMS_KEYRING_NAME = "private-gateway"
@@ -75,7 +73,6 @@ FF_DECRYPTION_ENABLED = "true"
 FF_KMS_RATE_LIMITER_ENABLED = "true"
 
 # Development Environment-specific KMS CONFIG
-GOOGLE_KMS_BASE_URL = "https://cloudkms.googleapis.com/v1"
 GOOGLE_KMS_PROJECT_ID = "storacha-staging"
 GOOGLE_KMS_LOCATION = "global"
 GOOGLE_KMS_KEYRING_NAME = "ucan-kms-staging-keyring"
