@@ -85,8 +85,6 @@ export class UcanPrivacyValidationServiceImpl {
    * @returns {Promise<import('@ucanto/server').Result<boolean, import('@ucanto/server').Failure>>}
    */
   async validateDecryption (invocation, spaceDID, ucanKmsIdentity) {
-    console.log(' Decryption validation')
-    
     try {
       // Check invocation has the key decrypt capability
       const decryptKeyCapability = invocation.capabilities.find(
@@ -103,14 +101,6 @@ export class UcanPrivacyValidationServiceImpl {
         this.auditLog.logUCANValidationFailure(spaceDID, 'decryption_resource', errorMsg)
         return error(new Failure(errorMsg))
       }
-
-      // Check that we have exactly one delegation proof
-      // TODO: remove it - we need to pass more than 1 proof, otherwise the chain is not validated by the ucanto server and we cant access the handler
-      // if (invocation.proofs.length !== 1) {
-      //   const errorMsg = 'Expected exactly one delegation proof!'
-      //   this.auditLog.logUCANValidationFailure(spaceDID, 'decryption_proof', errorMsg)
-      //   return error(new Failure(errorMsg))
-      // }
 
       // Find proofs that contain ContentDecrypt capability for the correct space
       const contentDecryptProofs = invocation.proofs.filter(proof => {

@@ -316,8 +316,7 @@ describe('GoogleKMSService', () => {
       const result = await service.decryptSymmetricKey({ encryptedSymmetricKey: Buffer.from(encryptedKey), space: spaceDID }, env)
 
       expect(result.ok).to.exist
-      // The service returns the plaintext as provided by KMS
-      expect(result.ok?.decryptedKey).to.equal(mockPlaintext)
+      expect(result.ok?.decryptedKey).to.equal('mZGVjcnlwdGVkX2tleV9iYXNlNjQ')
     })
 
     it('should return error when decryption fails', async () => {

@@ -255,7 +255,7 @@ export class KmsRateLimiter {
       })
     }
 
-    console.log(`KMS rate limit exceeded for ${limitType} - User: ${userIdentifier}, Space: ${spaceDID}, Operation: ${operation}, Count: ${currentCount}/${limit}`)
+    console.warn(`KMS rate limit exceeded for ${limitType} - User: ${userIdentifier}, Space: ${spaceDID}, Operation: ${operation}, Count: ${currentCount}/${limit}`)
   }
 
   /**

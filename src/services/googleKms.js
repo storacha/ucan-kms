@@ -304,10 +304,6 @@ export class GoogleKMSService {
       // 2. Re-encode with multibase for client compatibility
       const rawBase64 = secureDecryptedKey.getValue()
       
-      // Debug: Log the data we're working with
-      console.log('[KMS Debug] Raw base64 length:', rawBase64.length)
-      console.log('[KMS Debug] Raw base64 (first 50 chars):', rawBase64.substring(0, 50))
-      
       // Convert base64 back to Uint8Array (this is the original combined key+IV)
       // Use a more robust method for base64 → Uint8Array conversion
       const decodedString = atob(rawBase64)
@@ -316,14 +312,8 @@ export class GoogleKMSService {
         binaryData[i] = decodedString.charCodeAt(i)
       }
       
-      console.log('[KMS Debug] Binary data length:', binaryData.length)
-      console.log('[KMS Debug] Binary data first 10 bytes:', Array.from(binaryData.slice(0, 10)))
-      
       // Use the same multiformats library as the client for proper encoding
       const decryptedKey = base64.encode(binaryData)
-      console.log('[KMS Debug] Final multibase length:', decryptedKey.length)
-      console.log('[KMS Debug] Final multibase prefix:', decryptedKey.substring(0, 10))
-      
       // Success - log audit event
       this.auditLog.logKMSDecryptSuccess(
         request.space,

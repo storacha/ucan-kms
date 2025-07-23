@@ -263,7 +263,7 @@ describe('UcanPrivacyValidationService', () => {
       const result = await service.validateDecryption(invocation, spaceDID, ucanKmsIdentity)
 
       expect(result.error).to.exist
-      expect(result.error?.message).to.equal('Expected exactly one delegation proof!')
+      expect(result.error?.message).to.equal('No valid ContentDecrypt delegation found in proofs!')
     })
 
     it('should return error when multiple delegation proofs are provided', async () => {
@@ -300,7 +300,7 @@ describe('UcanPrivacyValidationService', () => {
       const result = await service.validateDecryption(invocation, spaceDID, ucanKmsIdentity)
 
       expect(result.error).to.exist
-      expect(result.error?.message).to.equal('Expected exactly one delegation proof!')
+      expect(result.error?.message).to.equal('No valid ContentDecrypt delegation found in proofs!')
     })
 
     it('should return error when delegation lacks content decrypt capability', async () => {
@@ -329,7 +329,7 @@ describe('UcanPrivacyValidationService', () => {
       const result = await service.validateDecryption(invocation, spaceDIDForTest, ucanKmsIdentity)
 
       expect(result.error).to.exist
-      expect(result.error?.message).to.include('Delegation does not contain space/content/decrypt capability!')
+      expect(result.error?.message).to.equal('No valid ContentDecrypt delegation found in proofs!')
     })
 
     it('should return error when delegation is for wrong space', async () => {
@@ -362,7 +362,7 @@ describe('UcanPrivacyValidationService', () => {
       const result = await service.validateDecryption(invocation, spaceDIDForTest, ucanKmsIdentity)
 
       expect(result.error).to.exist
-      expect(result.error?.message).to.include('Invalid "with" in the delegation. Decryption is allowed only for files associated with spaceDID')
+      expect(result.error?.message).to.equal('No valid ContentDecrypt delegation found in proofs!')
     })
 
     it('should return error when invocation issuer does not match delegation audience', async () => {
