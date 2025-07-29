@@ -1,6 +1,7 @@
 import { Result } from "@ucanto/server";
-import { SpaceDID } from "@storacha/capabilities/types";
+import { AccountDID, SpaceDID } from "@storacha/capabilities/types";
 import { Env } from "../types/env.js";
+import { Delegation } from "@ucanto/interface";
 
 export interface EncryptionSetupResult {
   /** The public key for the space in PEM format */

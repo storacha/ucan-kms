@@ -51,7 +51,13 @@ export default {
       ctx.kms = new GoogleKMSService(env, { auditLog, environment: env.ENVIRONMENT });
       ctx.kmsRateLimiter = new KmsRateLimiter(env, { auditLog });
       ctx.revocationStatusService = new RevocationStatusServiceImpl({ auditLog });
-      ctx.subscriptionStatusService = new PlanSubscriptionServiceImpl({ auditLog });
+      ctx.subscriptionStatusService = new PlanSubscriptionServiceImpl(
+        ucanKmsSigner,
+        ucanKmsIdentity.did(),
+        { 
+        auditLog, 
+        environment: env.ENVIRONMENT 
+      });
       ctx.ucanPrivacyValidationService = new UcanPrivacyValidationServiceImpl({ auditLog });
 
       // Create service handler and ucan server

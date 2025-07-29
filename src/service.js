@@ -26,10 +26,11 @@ export function createService (ctx, env) {
             }
 
             const space = /** @type {import('@storacha/capabilities/types').SpaceDID} */ (capability.with)
+
             const request = {
               space,
               location: capability.nb?.location,
-              keyring: capability.nb?.keyring
+              keyring: capability.nb?.keyring,
             }
 
             const result = await handleEncryptionSetup(request, invocation, ctx, env)

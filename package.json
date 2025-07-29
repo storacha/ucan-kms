@@ -61,6 +61,7 @@
     "@ipld/car": "^5.4.2",
     "@ipld/dag-cbor": "^9.2.4",
     "@storacha/capabilities": "1.8.0",
+    "@storacha/client": "^1.6.0",
     "@ucanto/client": "9.0.1",
     "@ucanto/core": "10.4.0",
     "@ucanto/interface": "10.3.0",

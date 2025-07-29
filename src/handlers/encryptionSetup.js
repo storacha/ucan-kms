@@ -43,11 +43,16 @@ export async function handleEncryptionSetup (request, invocation, ctx, env) {
     }
 
     // Step 2: Validate space has paid plan (if subscription service is available)
-    const planResult = await ctx.subscriptionStatusService?.isProvisioned(request.space, env)
+    const planResult = await ctx.subscriptionStatusService?.isProvisioned(invocation, request.space, env)
     if (planResult?.error) {
       const errorMsg = planResult.error.message || 'Subscription validation failed'
       auditLog.logInvocation(request.space, EncryptionSetup.can, false, 'Subscription validation failed: ' + errorMsg, invocationCid, Date.now() - startTime)
       return error(planResult.error)
+    }
+    if (!planResult?.ok.provisioned) {
+      const errorMsg = 'User account owner of the space does not have a paid plan'
+      auditLog.logInvocation(request.space, EncryptionSetup.can, false, errorMsg, invocationCid, Date.now() - startTime)
+      return error(new Failure(errorMsg))
     }
 
     // Step 3: Ensure KMS service is available
