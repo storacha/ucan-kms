@@ -1,14 +1,13 @@
-name: Deploy to Staging
+name: Deploy to Production
 
 on:
-  push:
-    branches:
-      - main
+  release:
+    types: [published]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    name: Deploy to Cloudflare Workers (Staging)
+    name: Deploy to Cloudflare Workers (Production)
     
     steps:
       - name: Checkout code
@@ -53,14 +52,17 @@ jobs:
       - name: Run coverage tests
         run: pnpm run test:coverage
 
-      - name: Deploy to Cloudflare Workers (Staging)
+      - name: Deploy to Cloudflare Workers (Production)
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CF_TOKEN }}
           accountId: ${{ secrets.CF_ACCOUNT_ID }}
-          command: deploy --env staging 
+          command: deploy --env production
 
       - name: Create deployment summary
         run: |
-          echo "Deployment successful!"
-          echo "Staging URL: https://ucan-kms-staging.storacha.workers.dev"
+          echo "🚀 **Production Deployment Successful**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Release:** ${{ github.event.release.tag_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** production" >> $GITHUB_STEP_SUMMARY
+          echo "**Deployed at:** $(date -u)" >> $GITHUB_STEP_SUMMARY 

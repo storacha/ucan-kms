@@ -30,7 +30,7 @@ account_id = "fffa4b4363a7e5250af8357087263b3a"
 #route = { pattern = "https://kms.storacha.network/*", zone_id = "TBD" }
 r2_buckets = []
 kv_namespaces = [
-  { binding = "KMS_RATE_LIMIT_KV", id = "TBD" }
+  { binding = "KMS_RATE_LIMIT_KV", id = "5539b72174e045ebb228423b27b9f5d5" }
 ]
 
 # Production Environment-specific variables
