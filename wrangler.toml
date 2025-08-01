@@ -16,8 +16,44 @@ FF_DECRYPTION_ENABLED = "true"
 FF_KMS_RATE_LIMITER_ENABLED = "true"
 UCAN_KMS_SERVICE_DID = "did:web:dev.kms.storacha.link"
 
+########################################################
+#### PRODUCTION ENVIRONMENT CONFIGURATION
+########################################################
 
+# Production Environment-specific observability settings
+[env.production.observability]
+enabled = true
+
+[env.production]
+workers_dev = true
+account_id = "fffa4b4363a7e5250af8357087263b3a"
+#route = { pattern = "https://kms.storacha.network/*", zone_id = "TBD" }
+r2_buckets = []
+kv_namespaces = [
+  { binding = "KMS_RATE_LIMIT_KV", id = "5539b72174e045ebb228423b27b9f5d5" }
+]
+
+# Production Environment-specific variables
+[env.production.vars]
+ENVIRONMENT = "production"
+UCAN_KMS_SERVICE_DID = "did:web:kms.storacha.network"
+# REVOCATION_STATUS_SERVICE_URL = "https://up.web3.storage"
+# SUBSCRIPTION_PLAN_SERVICE_URL = "https://up.web3.storage"
+
+# Production Environment-specific FEATURE FLAGS
+FF_DECRYPTION_ENABLED = "true"
+FF_KMS_RATE_LIMITER_ENABLED = "true"
+
+# Production Environment-specific KMS CONFIG
+GOOGLE_KMS_PROJECT_ID = "storacha-production"
+GOOGLE_KMS_LOCATION = "global"
+GOOGLE_KMS_KEYRING_NAME = "ucan-kms-production-keyring"
+
+
+
+########################################################
 #### STAGING ENVIRONMENT CONFIGURATION
+########################################################
 
 # Staging Environment-specific observability settings
 [env.staging.observability]
@@ -46,9 +82,14 @@ FF_KMS_RATE_LIMITER_ENABLED = "true"
 # Staging Environment-specific KMS CONFIG
 GOOGLE_KMS_PROJECT_ID = "storacha-staging"
 GOOGLE_KMS_LOCATION = "global"
-GOOGLE_KMS_KEYRING_NAME = "private-gateway"
+GOOGLE_KMS_KEYRING_NAME = "ucan-kms-staging-keyring"
 
+
+
+########################################################
 #### FFORBECK ENVIRONMENT CONFIGURATION
+########################################################
+
 # Forbeck Environment-specific observability settings
 [env.fforbeck.observability]
 enabled = true

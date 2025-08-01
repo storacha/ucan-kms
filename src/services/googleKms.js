@@ -1,6 +1,7 @@
 import * as z from 'zod'
 import * as CRC32 from 'crc-32'
 import { base64 } from 'multiformats/bases/base64'
+import pRetry, { AbortError } from 'p-retry'
 import { sanitizeSpaceDIDForKMSKeyId } from '../utils.js'
 import { AuditLogService } from './auditLog.js'
 import { error, ok, Failure } from '@ucanto/server'
@@ -157,15 +158,11 @@ export class GoogleKMSService {
         environment: options.environment || 'unknown'
       })
 
-      // Initialize authentication
       this.authConfig = this._setupAuthentication(env)
-
-      // Only log service initialization in development
       if (process.env.NODE_ENV === 'development') {
         this.auditLog.logServiceInitialization('GoogleKMSService', true)
       }
     } catch (error) {
-      // Log initialization failure
       const auditLog = options.auditLog || new AuditLogService({
         serviceName: 'google-kms-service',
         environment: options.environment || 'unknown'
@@ -184,14 +181,12 @@ export class GoogleKMSService {
    */
   _setupAuthentication(env) {
     if (env.GOOGLE_KMS_TOKEN) {
-      // Use access token authentication
       console.log('Using access token authentication')
       return {
         type: 'access_token',
         token: env.GOOGLE_KMS_TOKEN
       }
     } else if (env.GOOGLE_KMS_SERVICE_ACCOUNT_JSON) {
-      // Use service account JSON authentication
       console.log('Using service account JSON authentication')
       try {
         const credentials = JSON.parse(env.GOOGLE_KMS_SERVICE_ACCOUNT_JSON)
@@ -220,13 +215,11 @@ export class GoogleKMSService {
    */
   async _getAuthHeaders() {
     if (this.authConfig.type === 'access_token') {
-      // Simple case: use access token directly
       return {
         'Authorization': `Bearer ${this.authConfig.token}`,
         'Content-Type': 'application/json'
       }
     } else if (this.authConfig.type === 'service_account') {
-      // Generate access token from service account credentials
       const accessToken = await this._getServiceAccountAccessToken()
       return {
         'Authorization': `Bearer ${accessToken}`,
@@ -248,7 +241,6 @@ export class GoogleKMSService {
     }
     const { credentials } = this.authConfig
     
-    // Create JWT for Google Cloud authentication
     const header = {
       alg: 'RS256',
       typ: 'JWT'
@@ -283,7 +275,6 @@ export class GoogleKMSService {
     
     if (!tokenResponse.ok) {
       const errorText = await tokenResponse.text()
-      // Log detailed error internally for debugging
       console.error('[_getServiceAccountAccessToken] Auth failed:', {
         status: tokenResponse.status,
         error: errorText
@@ -331,7 +322,6 @@ export class GoogleKMSService {
       ['sign']
     )
     
-    // Sign the JWT
     const signature = await crypto.subtle.sign(
       'RSASSA-PKCS1-v1_5',
       cryptoKey,
@@ -353,7 +343,6 @@ export class GoogleKMSService {
     if (typeof data === 'string') {
       base64 = btoa(data)
     } else {
-      // Convert Uint8Array to string then encode
       const binaryString = Array.from(data, byte => String.fromCharCode(byte)).join('')
       base64 = btoa(binaryString)
     }
@@ -463,8 +452,6 @@ export class GoogleKMSService {
       return error(new Failure('Encryption setup failed'))
     } catch (err) {
       console.error('[setupKeyForSpace] something went wrong:', err)
-
-      // Log audit event
       this.auditLog.logKMSKeySetupFailure(
         request.space,
         `Encryption setup failed: ${err instanceof Error ? err.message : String(err)}`,
@@ -490,7 +477,6 @@ export class GoogleKMSService {
     let secureDecryptedKey = null
 
     try {
-      // Sanitize space DID to match the key ID format used in encryption setup
       const sanitizedKeyId = sanitizeSpaceDIDForKMSKeyId(request.space)
       const keyName = `projects/${env.GOOGLE_KMS_PROJECT_ID}/locations/${env.GOOGLE_KMS_LOCATION}/keyRings/${env.GOOGLE_KMS_KEYRING_NAME}/cryptoKeys/${sanitizedKeyId}`
 
@@ -526,7 +512,6 @@ export class GoogleKMSService {
         throw new Error(`KMS decryption failed ${keyName}: ${response.status} - ${result.plaintext}`)
       }
 
-      // Wrap decrypted key in SecureString for better memory hygiene
       secureDecryptedKey = new SecureString(result.plaintext)
 
       // Google KMS returns the decrypted data as base64, but the client expects 
@@ -545,7 +530,6 @@ export class GoogleKMSService {
       
       // Use the same multiformats library as the client for proper encoding
       const decryptedKey = base64.encode(binaryData)
-      // Success - log audit event
       this.auditLog.logKMSDecryptSuccess(
         request.space,
         keyVersion,
@@ -554,8 +538,6 @@ export class GoogleKMSService {
       return ok({ decryptedKey })
     } catch (err) {
       console.error('[decryptSymmetricKey] something went wrong:', err)
-      
-      // Log audit event
       this.auditLog.logKMSDecryptFailure(
         request.space,
         `Symmetric key decryption failed: ${err instanceof Error ? err.message : String(err)}`,
@@ -592,7 +574,6 @@ export class GoogleKMSService {
 
       if (!keyDataResponse.ok) {
         const errorText = await keyDataResponse.text()
-        // Log detailed error internally for debugging
         this.auditLog.logKMSKeySetupFailure(
           space,
           `KMS key data retrieval failed: ${keyDataResponse.status} - ${errorText}`,
@@ -651,14 +632,13 @@ export class GoogleKMSService {
 
       if (!versionsResponse.ok) {
         const errorText = await versionsResponse.text()
-        // Log detailed error internally for debugging
         console.error(`KMS key versions retrieval failed: ${versionsResponse.status} - ${errorText}`, {
           operation: '_getActiveKeyVersion',
           space,
           status: versionsResponse.status,
           error: errorText
         })
-        // Return generic error to client
+        // Return generic error to client to avoid leaking information
         throw new Error('Key operation failed')
       }
 
@@ -782,100 +762,122 @@ export class GoogleKMSService {
    * @returns {Promise<EncryptionSetupResult>}
    */
   async _fetchAndValidatePublicKey(keyVersionPath, space) {
-    let securePem = null
     const startTime = Date.now()
+    
     try {
-      const publicKeyUrl = `${GOOGLE_KMS_BASE_URL}/${keyVersionPath}/publicKey`
-      const authHeaders = await this._getAuthHeaders()
-      const pubKeyResponse = await fetch(publicKeyUrl, {
-        headers: authHeaders,
-        signal: AbortSignal.timeout(TIMEOUTS.KEY_LOOKUP)
-      })
-      if (!pubKeyResponse.ok) {
-        const errorText = await pubKeyResponse.text()
-        throw new Error(`KMS public key retrieval failed ${keyVersionPath}: ${pubKeyResponse.status} - ${errorText}`)
-      }
+      const result = await pRetry(async () => {
+        const publicKeyUrl = `${GOOGLE_KMS_BASE_URL}/${keyVersionPath}/publicKey`
+        const authHeaders = await this._getAuthHeaders()
+        const pubKeyResponse = await fetch(publicKeyUrl, {
+          headers: authHeaders,
+          signal: AbortSignal.timeout(TIMEOUTS.KEY_LOOKUP)
+        })
+        
+        if (!pubKeyResponse.ok) {
+          const errorText = await pubKeyResponse.text()
+          
+          if (pubKeyResponse.status === 404) {
+            // 404 means key not yet available - let p-retry handle this
+            throw new Error(`Key not yet available: ${keyVersionPath}`)
+          }
+          
+          // Other errors should not retry
+          throw new AbortError(`KMS public key retrieval failed ${keyVersionPath}: ${pubKeyResponse.status} - ${errorText}`)
+        }
 
-      /**
-       * @type {{ algorithm: string, publicKey?: {crc32cChecksum: string, data: string}, publicKeyFormat?: string, name: string, pem?: string, pemCrc32c?: string }}
-       */
-      const pubKeyData = await pubKeyResponse.json()
+        /**
+         * @type {{ algorithm: string, publicKey?: {crc32cChecksum: string, data: string}, publicKeyFormat?: string, name: string, pem?: string, pemCrc32c?: string }}
+         */
+        const pubKeyData = await pubKeyResponse.json()
 
-      let decodedPem
-      
-      // Handle both old and new API response formats
-      if (pubKeyData.pem) {
-        // New format: PEM is returned directly
-        decodedPem = pubKeyData.pem
-      } else if (pubKeyData.publicKey && pubKeyData.publicKey.data) {
-        // Old format: PEM is base64-encoded in publicKey.data
+        let decodedPem
+        
+        // Handle both old and new API response formats
+        if (pubKeyData.pem) {
+          // New format: PEM is returned directly
+          decodedPem = pubKeyData.pem
+        } else if (pubKeyData.publicKey && pubKeyData.publicKey.data) {
+          // Old format: PEM is base64-encoded in publicKey.data
+          try {
+            decodedPem = atob(pubKeyData.publicKey.data)
+          } catch (err) {
+            throw new AbortError(`KMS public key base64 decoding failed ${keyVersionPath}: ${err instanceof Error ? err.message : String(err)}`)
+          }
+        } else {
+          console.error(`[GoogleKMS] Invalid public key response structure:`, JSON.stringify(pubKeyData, null, 2))
+          throw new AbortError(`KMS public key response missing pem or publicKey.data field ${keyVersionPath}`)
+        }
+
+        // Validate the public key format
+        if (!decodedPem || !decodedPem.startsWith('-----BEGIN PUBLIC KEY-----')) {
+          throw new AbortError(`KMS public key decoding failed due to invalid format or missing data ${keyVersionPath}`)
+        }
+
+        // Wrap decoded PEM in SecureString for better memory hygiene
+        const securePem = new SecureString(decodedPem)
+
         try {
-          decodedPem = atob(pubKeyData.publicKey.data)
-        } catch (err) {
-          throw new Error(`KMS public key base64 decoding failed ${keyVersionPath}: ${err instanceof Error ? err.message : String(err)}`)
+          // Perform integrity check if CRC32C is provided
+          let crcChecksum, dataForCrc
+          if (pubKeyData.pem && pubKeyData.pemCrc32c) {
+            // New format: CRC32C of the PEM string
+            crcChecksum = pubKeyData.pemCrc32c
+            dataForCrc = pubKeyData.pem
+          } else if (pubKeyData.publicKey?.crc32cChecksum && pubKeyData.publicKey?.data) {
+            // Old format: CRC32C of the base64-encoded data string
+            crcChecksum = pubKeyData.publicKey.crc32cChecksum
+            dataForCrc = pubKeyData.publicKey.data
+          }
+          
+          if (crcChecksum && dataForCrc) {
+            // For now, enable integrity check with detailed logging to understand the issue
+            const isValid = GoogleKMSService.validatePublicKeyIntegrity(dataForCrc, crcChecksum)
+
+            if (!isValid) {
+              console.warn('[fetchAndValidatePublicKey] CRC32 integrity check failed but continuing:', {
+                expected: crcChecksum,
+                calculated: (CRC32.str(dataForCrc) >>> 0).toString(),
+                note: 'CRC32 mismatch - Google uses a different polynomial/implementation. Find a way to verify the integrity of the public key.'
+              })
+              this.auditLog.logKMSKeySetupSuccess(
+                space,
+                pubKeyData.algorithm || 'RSA_DECRYPT_OAEP_3072_SHA256',
+                'integrity_check_bypassed',
+                Date.now() - startTime
+              )
+            }
+          }
+
+          return {
+            publicKey: securePem.getValue(),
+            algorithm: pubKeyData.algorithm,
+            provider: 'google-kms'
+          }
+        } finally {
+          // Securely clear sensitive PEM data from memory
+          securePem.dispose()
         }
-      } else {
-        console.error(`[GoogleKMS] Invalid public key response structure:`, JSON.stringify(pubKeyData, null, 2))
-        throw new Error(`KMS public key response missing pem or publicKey.data field ${keyVersionPath}`)
-      }
-
-      // Validate the public key format
-      if (!decodedPem || !decodedPem.startsWith('-----BEGIN PUBLIC KEY-----')) {
-        throw new Error(`KMS public key decoding failed due to invalid format or missing data ${keyVersionPath}`)
-      }
-
-      // Wrap decoded PEM in SecureString for better memory hygiene
-      securePem = new SecureString(decodedPem)
-
-      // Perform integrity check if CRC32C is provided
-      let crcChecksum, dataForCrc
-      if (pubKeyData.pem && pubKeyData.pemCrc32c) {
-        // New format: CRC32C of the PEM string
-        crcChecksum = pubKeyData.pemCrc32c
-        dataForCrc = pubKeyData.pem
-      } else if (pubKeyData.publicKey?.crc32cChecksum && pubKeyData.publicKey?.data) {
-        // Old format: CRC32C of the base64-encoded data string
-        crcChecksum = pubKeyData.publicKey.crc32cChecksum
-        dataForCrc = pubKeyData.publicKey.data
-      }
+      }, {
+        retries: 5,
+        factor: 2,
+        minTimeout: 1000,    // 1 second
+        maxTimeout: 10000,   // 10 seconds max
+        onFailedAttempt: (/** @type {import('p-retry').FailedAttemptError} */ error) => {
+          console.log(`[_fetchAndValidatePublicKey] Attempt ${error.attemptNumber} failed. ${error.retriesLeft} retries left. Error: ${error.message}`)
+        }
+      })
       
-      if (crcChecksum && dataForCrc) {
-        // For now, enable integrity check with detailed logging to understand the issue
-        const isValid = GoogleKMSService.validatePublicKeyIntegrity(dataForCrc, crcChecksum)
-
-        if (!isValid) {
-          console.warn('[fetchAndValidatePublicKey] CRC32 integrity check failed but continuing:', {
-            expected: crcChecksum,
-            calculated: (CRC32.str(dataForCrc) >>> 0).toString(),
-            note: 'CRC32 mismatch - Google uses a different polynomial/implementation. Find a way to verify the integrity of the public key.'
-          })
-          this.auditLog.logKMSKeySetupSuccess(
-            space,
-            pubKeyData.algorithm || 'RSA_DECRYPT_OAEP_3072_SHA256',
-            'integrity_check_bypassed',
-            Date.now() - startTime
-          )
-        }
-      }
-
-      return {
-        publicKey: securePem.getValue(),
-        algorithm: pubKeyData.algorithm,
-        provider: 'google-kms'
-      }
+      return result
     } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err)
+      
       this.auditLog.logKMSKeySetupFailure(
         space,
-        'KMS public key fetch and validation failed: ' + (err instanceof Error ? err.message : String(err)),
+        'KMS public key fetch and validation failed: ' + errorMessage,
         undefined,
         Date.now() - startTime
       )
       throw new Error('KMS public key fetch and validation failed')
-    } finally {
-      // Securely clear sensitive PEM data from memory
-      if (securePem) {
-        securePem.dispose()
-      }
     }
   }
 
