@@ -69,7 +69,9 @@ export default {
       responseHeaders.set('Access-Control-Allow-Methods', 'POST, OPTIONS')
       responseHeaders.set('Access-Control-Allow-Headers', 'Content-Type, Authorization')
       
-      return new Response(body, { status: 200, headers: responseHeaders })
+      // Convert ByteView to Uint8Array for Response constructor
+      const responseBody = body instanceof Uint8Array ? body : new Uint8Array(body)
+      return new Response(responseBody, { status: 200, headers: responseHeaders })
     } catch (error) {
       console.error('Error processing request:', error)
       const errorHeaders = new Headers()

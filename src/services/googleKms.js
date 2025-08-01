@@ -452,12 +452,13 @@ export class GoogleKMSService {
       return error(new Failure('Encryption setup failed'))
     } catch (err) {
       console.error('[setupKeyForSpace] something went wrong:', err)
+
+      // Log audit event
       this.auditLog.logKMSKeySetupFailure(
         request.space,
         `Encryption setup failed: ${err instanceof Error ? err.message : String(err)}`,
         undefined,
         Date.now() - startTime
-
       )
 
       // Generic error message must be returned to the client to avoid leaking information
@@ -730,6 +731,7 @@ export class GoogleKMSService {
 
       if (!createResponse.ok) {
         const errorText = await createResponse.text()
+        console.log(`[_createNewKey] Key creation failed: ${createResponse.status} - ${errorText}`)
         if (createResponse.status === 401) {
           throw new Error(`KMS authentication failed during key creation - token may be expired`)
         }
@@ -765,23 +767,49 @@ export class GoogleKMSService {
     const startTime = Date.now()
     
     try {
-      const result = await pRetry(async () => {
-        const publicKeyUrl = `${GOOGLE_KMS_BASE_URL}/${keyVersionPath}/publicKey`
-        const authHeaders = await this._getAuthHeaders()
-        const pubKeyResponse = await fetch(publicKeyUrl, {
-          headers: authHeaders,
-          signal: AbortSignal.timeout(TIMEOUTS.KEY_LOOKUP)
-        })
+      // Create an overall timeout for the entire retry operation (30 seconds)
+      const controller = new AbortController()
+      const overallTimeout = setTimeout(() => controller.abort(), 30000)
+      
+      try {
+        const result = await pRetry(async () => {
+          const publicKeyUrl = `${GOOGLE_KMS_BASE_URL}/${keyVersionPath}/publicKey`
+          const authHeaders = await this._getAuthHeaders()
+          const pubKeyResponse = await fetch(publicKeyUrl, {
+            headers: authHeaders,
+            signal: controller.signal  // Use the overall timeout, not individual request timeout
+          })
         
         if (!pubKeyResponse.ok) {
           const errorText = await pubKeyResponse.text()
           
+          console.log(`[_fetchAndValidatePublicKey] Error response: ${pubKeyResponse.status} - ${errorText}`)
+          
           if (pubKeyResponse.status === 404) {
             // 404 means key not yet available - let p-retry handle this
-            throw new Error(`Key not yet available: ${keyVersionPath}`)
+            throw new Error(`Key not yet available (404): ${keyVersionPath}`)
           }
           
-          // Other errors should not retry
+          if (pubKeyResponse.status === 403) {
+            // 403 might be temporary permission propagation - retry this too
+            throw new Error(`Key access forbidden (403), may be permission propagation delay: ${keyVersionPath}`)
+          }
+          
+          if (pubKeyResponse.status === 400) {
+            // Check if it's a PENDING_GENERATION error (key still being created)
+            if (errorText.includes('PENDING_GENERATION') || errorText.includes('is not enabled')) {
+              throw new Error(`Key still being generated (400 PENDING_GENERATION): ${keyVersionPath}`)
+            }
+            // Other 400 errors should not be retried
+            throw new AbortError(`Bad request (400): ${keyVersionPath} - ${errorText}`)
+          }
+          
+          if (pubKeyResponse.status >= 500) {
+            // 5xx server errors are often temporary - retry these
+            throw new Error(`Server error (${pubKeyResponse.status}), retrying: ${keyVersionPath}`)
+          }
+          
+          // Only abort on auth errors (401) and other client errors
           throw new AbortError(`KMS public key retrieval failed ${keyVersionPath}: ${pubKeyResponse.status} - ${errorText}`)
         }
 
@@ -867,9 +895,18 @@ export class GoogleKMSService {
         }
       })
       
-      return result
+        return result
+      } finally {
+        // Clear the overall timeout
+        clearTimeout(overallTimeout)
+      }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : String(err)
+      let errorMessage = err instanceof Error ? err.message : String(err)
+      
+      // Provide clearer error message for timeout
+      if (err instanceof Error && err.name === 'AbortError') {
+        errorMessage = 'Key fetch operation timed out after 30 seconds (including retries)'
+      }
       
       this.auditLog.logKMSKeySetupFailure(
         space,
