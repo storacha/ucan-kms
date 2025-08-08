@@ -1,15 +1,28 @@
 import { AuditLogService } from './auditLog.js'
 import { error, ok, Failure } from '@ucanto/server'
+import { Plan } from '@storacha/capabilities'
+import { create as createClient } from '@storacha/client'
+import { StoreMemory } from '@storacha/client/stores'
 
 /**
  * @import { SubscriptionStatusService } from './subscription.types.js'
  */
 
 /**
+ * Paid plans available for subscription
+ */
+const PAID_PLANS = [
+  'did:web:lite.web3.storage',
+  'did:web:business.web3.storage',
+]
+
+/**
  * Plan service subscription status implementation
  * @implements {SubscriptionStatusService}
  */
 export class PlanSubscriptionServiceImpl {
+
+  
   /**
    * Creates a new subscription service
    * @param {Object} [options] - Service options
@@ -28,41 +41,101 @@ export class PlanSubscriptionServiceImpl {
   }
 
   /**
-   * Validates that a space has a paid plan.
+   * Validates that a space has a paid plan by checking for plan/get delegation proofs.
    *
    * @param {import('@storacha/capabilities/types').SpaceDID} space - The space DID to check
-   * @param {import('../types/env.js').Env } env - Environment configuration
-   * @returns {Promise<import('@ucanto/server').Result<{ ok: boolean }, import('@ucanto/server').Failure>>}
+   * @param {import('@ucanto/interface').Proof[]} proofs - UCAN proofs to validate for plan/get capability
+   * @param {import('../api.types.js').Context } ctx - Context object containing environment configuration
+   * @returns {Promise<import('@ucanto/server').Result<{ isProvisioned: boolean }, import('@ucanto/server').Failure>>}
    */
-  async isProvisioned (space, env) {
+  async isProvisioned (space, proofs, ctx) {
     try {
-      if (!env.SUBSCRIPTION_PLAN_SERVICE_URL) {
-        // If no plan service configured, allow all spaces (dev mode)
-        this.auditLog.logSecurityEvent('subscription_plan_service_unavailable', {
+      if (proofs.length === 0) {
+        this.auditLog.logSecurityEvent('subscription_plan_delegation_missing', {
           operation: 'subscription_check',
-          status: 'skipped',
+          status: 'denied',
           metadata: {
-            reason: 'service_not_configured'
+            space,
+            reason: 'no_plan_get_delegation_provided',
+            proofsCount: proofs.length
           }
         })
-        return ok({ ok: true })
+        return error(new Failure('No Plan/Get Delegation proofs provided'))
+      }
+      
+      const planGetDelegation = proofs
+      .map(p => /** @type {import('@ucanto/interface').Delegation} */(p))
+      .find(d => d.capabilities.some(cap => cap.can === Plan.get.can))
+      if (!planGetDelegation) {
+        this.auditLog.logSecurityEvent('subscription_plan_delegation_missing', {
+          operation: 'subscription_check',
+          status: 'denied',
+          metadata: {
+            space,
+            reason: 'no_plan_get_delegation_in_proofs',
+            proofsCount: proofs.length
+          }
+        })
+        return error(new Failure('No Plan/Get Delegation proofs found'))
+      }
+      const client = await createClient({
+        principal: ctx.ucanKmsSigner,
+        store: new StoreMemory(),
+      })
+      await client.addProof(planGetDelegation)
+      const [capability] = planGetDelegation.capabilities
+      const accountDID = capability.with
+      const clientProofs = client.proofs([{
+        can: Plan.get.can,
+        with: accountDID,
+      }])
+
+      const receipt = await client.agent.invokeAndExecute(Plan.get, {
+        with: accountDID,
+        proofs: clientProofs
+      })
+      const result = receipt.out
+      if (!result.ok) {
+        this.auditLog.logSecurityEvent('subscription_plan_delegation_invalid', {
+          operation: 'subscription_check',
+          status: 'denied',
+          metadata: {
+            space,
+            accountDID,
+            reason: 'plan_get_delegation_invalid',
+            proofsCount: proofs.length
+          }
+        })
+        return error(new Failure('Plan/Get Delegation proofs are invalid'))
       }
 
-      // TODO: Query plan service to check if space is provisioned (it means it has a paid plan)
-      // This would typically involve:
-      // 1. Call the subscription plan service API with the space DID
-      // 2. Parse the response to determine if the space has a paid plan
-      // 3. Return appropriate result based on plan status
-      // For now, return success (allow all spaces)
-      this.auditLog.logSecurityEvent('subscription_plan_service_available', {
+      const plan = result.ok
+      if (!PAID_PLANS.includes(plan.product)) {
+        this.auditLog.logSecurityEvent('subscription_plan_invalid', {
+          operation: 'subscription_check',
+          status: 'denied',
+          metadata: {
+              space,
+              accountDID,
+              reason: 'not_paid_plan',
+              proofsCount: proofs.length
+            }
+          })
+          return error(new Failure('Not a paid plan'))
+        }
+      
+      this.auditLog.logSecurityEvent('subscription_plan_validated', {
         operation: 'subscription_check',
         status: 'success',
         metadata: {
-          implementation: 'stub',
-          note: 'Not fully implemented - returns success by default'
+          space,
+          accountDID,
+          planProofsFound: proofs.length,
+          validationMethod: 'delegation_presence'
         }
       })
-      return ok({ ok: true })
+
+      return ok({ isProvisioned: true })
     } catch (err) {
       console.error('[isProvisioned] something went wrong:', err)
 

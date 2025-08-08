@@ -43,7 +43,8 @@ export async function handleEncryptionSetup (request, invocation, ctx, env) {
     }
 
     // Step 2: Validate space has paid plan (if subscription service is available)
-    const planResult = await ctx.subscriptionStatusService?.isProvisioned(request.space, env)
+    // Pass the invocation proofs to check for plan/get delegation
+    const planResult = await ctx.subscriptionStatusService?.isProvisioned(request.space, invocation.proofs, ctx)
     if (planResult?.error) {
       const errorMsg = planResult.error.message || 'Subscription validation failed'
       auditLog.logInvocation(request.space, EncryptionSetup.can, false, 'Subscription validation failed: ' + errorMsg, invocationCid, Date.now() - startTime)

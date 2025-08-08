@@ -70,7 +70,12 @@ export default {
       responseHeaders.set('Access-Control-Allow-Headers', 'Content-Type, Authorization')
       
       // Convert ByteView to Uint8Array for Response constructor
-      const responseBody = body instanceof Uint8Array ? body : new Uint8Array(body)
+      // TypeScript workaround: explicitly cast the body to handle ByteView types
+      const responseBody = /** @type {Uint8Array} */ (
+        body instanceof Uint8Array 
+          ? body 
+          : new Uint8Array(body)
+      )
       return new Response(responseBody, { status: 200, headers: responseHeaders })
     } catch (error) {
       console.error('Error processing request:', error)
