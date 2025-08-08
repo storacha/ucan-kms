@@ -38,7 +38,6 @@ kv_namespaces = [
 ENVIRONMENT = "production"
 UCAN_KMS_SERVICE_DID = "did:web:kms.storacha.network"
 # REVOCATION_STATUS_SERVICE_URL = "https://up.web3.storage"
-# SUBSCRIPTION_PLAN_SERVICE_URL = "https://up.web3.storage"
 
 # Production Environment-specific FEATURE FLAGS
 FF_DECRYPTION_ENABLED = "true"
@@ -73,7 +72,6 @@ kv_namespaces = [
 ENVIRONMENT = "staging"
 UCAN_KMS_SERVICE_DID = "did:web:staging.kms.storacha.link"
 # REVOCATION_STATUS_SERVICE_URL = "https://up.web3.storage"
-# SUBSCRIPTION_PLAN_SERVICE_URL = "https://up.web3.storage"
 
 # Staging Environment-specific FEATURE FLAGS
 FF_DECRYPTION_ENABLED = "true"
@@ -107,7 +105,6 @@ kv_namespaces = [
 ENVIRONMENT = "development"
 UCAN_KMS_SERVICE_DID = "did:web:dev.kms.storacha.link"
 # REVOCATION_STATUS_SERVICE_URL = "https://up.web3.storage"
-# SUBSCRIPTION_PLAN_SERVICE_URL = "https://up.web3.storage"
 
 # Forbeck Environment-specific FEATURE FLAGS
 FF_DECRYPTION_ENABLED = "true"

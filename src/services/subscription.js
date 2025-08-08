@@ -1,39 +1,32 @@
 import { AuditLogService } from './auditLog.js'
 import { error, ok, Failure } from '@ucanto/server'
 import { Plan } from '@storacha/capabilities'
-import { create as createClient } from '@storacha/client'
-import { StoreMemory } from '@storacha/client/stores'
+import { StorachaStorageService } from './storacha-storage.js'
 
 /**
  * @import { SubscriptionStatusService } from './subscription.types.js'
  */
 
 /**
- * Paid plans available for subscription
- */
-const PAID_PLANS = [
-  'did:web:lite.web3.storage',
-  'did:web:business.web3.storage',
-]
-
-/**
  * Plan service subscription status implementation
  * @implements {SubscriptionStatusService}
  */
 export class PlanSubscriptionServiceImpl {
-
   
   /**
    * Creates a new subscription service
    * @param {Object} [options] - Service options
    * @param {AuditLogService} [options.auditLog] - Audit log service instance
    * @param {string} [options.environment] - Environment name for audit logging
+   * @param {StorachaStorageService} [options.storachaStorage] - Storacha storage service instance
    */
   constructor (options = {}) {
     this.auditLog = options.auditLog || new AuditLogService({
       serviceName: 'subscription-service',
       environment: options.environment || 'unknown'
     })
+    this.storachaStorage = options.storachaStorage
+    
     // Only log service initialization in development
     if (process.env.NODE_ENV === 'development') {
       this.auditLog.logServiceInitialization('PlanSubscriptionService', true)
@@ -78,51 +71,23 @@ export class PlanSubscriptionServiceImpl {
         })
         return error(new Failure('No Plan/Get Delegation proofs found'))
       }
-      const client = await createClient({
-        principal: ctx.ucanKmsSigner,
-        store: new StoreMemory(),
-      })
-      await client.addProof(planGetDelegation)
-      const [capability] = planGetDelegation.capabilities
-      const accountDID = capability.with
-      const clientProofs = client.proofs([{
-        can: Plan.get.can,
-        with: accountDID,
-      }])
-
-      const receipt = await client.agent.invokeAndExecute(Plan.get, {
-        with: accountDID,
-        proofs: clientProofs
-      })
-      const result = receipt.out
-      if (!result.ok) {
-        this.auditLog.logSecurityEvent('subscription_plan_delegation_invalid', {
+      
+      const storageService = this.storachaStorage || new StorachaStorageService({ signer: ctx.ucanKmsSigner })
+      const { plan, accountDID } = await storageService.getPlan(planGetDelegation)
+      if (!storageService.isPaidPlan(plan.product)) {
+        this.auditLog.logSecurityEvent('subscription_plan_invalid', {
           operation: 'subscription_check',
           status: 'denied',
           metadata: {
             space,
             accountDID,
-            reason: 'plan_get_delegation_invalid',
-            proofsCount: proofs.length
+            reason: 'not_paid_plan',
+            proofsCount: proofs.length,
+            planProduct: plan.product
           }
         })
-        return error(new Failure('Plan/Get Delegation proofs are invalid'))
+        return error(new Failure('Not a paid plan'))
       }
-
-      const plan = result.ok
-      if (!PAID_PLANS.includes(plan.product)) {
-        this.auditLog.logSecurityEvent('subscription_plan_invalid', {
-          operation: 'subscription_check',
-          status: 'denied',
-          metadata: {
-              space,
-              accountDID,
-              reason: 'not_paid_plan',
-              proofsCount: proofs.length
-            }
-          })
-          return error(new Failure('Not a paid plan'))
-        }
       
       this.auditLog.logSecurityEvent('subscription_plan_validated', {
         operation: 'subscription_check',
