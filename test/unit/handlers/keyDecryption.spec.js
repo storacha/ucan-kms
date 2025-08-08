@@ -21,6 +21,8 @@ describe('Key Decryption Handler', () => {
   /** @type {sinon.SinonStub} */
   let validateDecryptionStub
   /** @type {sinon.SinonStub} */
+  let isProvisionedStub
+  /** @type {sinon.SinonStub} */
   let checkStatusStub
   /** @type {sinon.SinonStub} */
   let decryptStub
@@ -36,6 +38,7 @@ describe('Key Decryption Handler', () => {
     
     // Mock invocation
     mockInvocation = {
+      cid: { toString: () => 'invocation-cid-123' },
       proofs: ['proof1', 'proof2']
     }
     
@@ -44,6 +47,9 @@ describe('Key Decryption Handler', () => {
       ucanKmsIdentity: { did: () => 'did:key:kms' },
       ucanPrivacyValidationService: {
         validateDecryption: () => ({ ok: true })
+      },
+      subscriptionStatusService: {
+        isProvisioned: () => Promise.resolve({ ok: { isProvisioned: true } })
       },
       revocationStatusService: {
         checkStatus: () => ({ ok: true })
@@ -68,6 +74,10 @@ describe('Key Decryption Handler', () => {
     // Stub validation methods
     validateDecryptionStub = sandbox.stub(mockCtx.ucanPrivacyValidationService, 'validateDecryption')
       .resolves({ ok: true })
+    
+    // Stub subscription service
+    isProvisionedStub = sandbox.stub(mockCtx.subscriptionStatusService, 'isProvisioned')
+      .resolves({ ok: { isProvisioned: true } })
     
     // Stub revocation status check
     checkStatusStub = sandbox.stub(mockCtx.revocationStatusService, 'checkStatus')
@@ -98,7 +108,7 @@ describe('Key Decryption Handler', () => {
       EncryptionKeyDecrypt.can,
       true,
       undefined,
-      undefined,
+      'invocation-cid-123',
       sinon.match.number
     ))
   })
@@ -117,7 +127,7 @@ describe('Key Decryption Handler', () => {
       EncryptionKeyDecrypt.can,
       false,
       'Decryption is not enabled',
-      undefined,
+      'invocation-cid-123',
       sinon.match.number
     ))
   })
@@ -136,7 +146,7 @@ describe('Key Decryption Handler', () => {
       EncryptionKeyDecrypt.can,
       false,
       'Encryption not available - ucanKms identity not configured',
-      undefined,
+      'invocation-cid-123',
       sinon.match.number
     ))
   })
@@ -155,7 +165,7 @@ describe('Key Decryption Handler', () => {
       EncryptionKeyDecrypt.can,
       false,
       'Missing encryptedSymmetricKey in invocation',
-      undefined,
+      'invocation-cid-123',
       sinon.match.number
     ))
   })
@@ -175,7 +185,27 @@ describe('Key Decryption Handler', () => {
       EncryptionKeyDecrypt.can,
       false,
       'UCAN validation failed',
-      undefined,
+      'invocation-cid-123',
+      sinon.match.number
+    ))
+  })
+
+  it('should return error when subscription validation fails', async () => {
+    const subscriptionError = new Error('Subscription validation failed')
+    isProvisionedStub.resolves({ error: subscriptionError })
+    
+    const result = await handleKeyDecryption(mockRequest, mockInvocation, mockCtx, mockEnv)
+    
+    assert(!result.ok)
+    assert.equal(result.error?.message, 'Subscription validation failed')
+    
+    // Verify audit log was called with error
+    assert(auditLogStub.calledWith(
+      mockRequest.space,
+      EncryptionKeyDecrypt.can,
+      false,
+      'Subscription validation failed: Subscription validation failed',
+      'invocation-cid-123',
       sinon.match.number
     ))
   })
@@ -195,7 +225,7 @@ describe('Key Decryption Handler', () => {
       EncryptionKeyDecrypt.can,
       false,
       'Revocation check failed',
-      undefined,
+      'invocation-cid-123',
       sinon.match.number
     ))
   })
@@ -215,7 +245,7 @@ describe('Key Decryption Handler', () => {
       EncryptionKeyDecrypt.can,
       false,
       'KMS decryption failed',
-      undefined,
+      'invocation-cid-123',
       sinon.match.number
     ))
   })

@@ -56,12 +56,6 @@ export interface Env {
    */
   REVOCATION_STATUS_SERVICE_URL?: string;
 
-  // Subscription plan service
-  /**
-   * URL of the subscription plan service to check if a space has a paid plan
-   */
-  SUBSCRIPTION_PLAN_SERVICE_URL?: string;
-
   // Rate limiting service
   /**
    * Feature flag to enable/disable KMS rate limiting
