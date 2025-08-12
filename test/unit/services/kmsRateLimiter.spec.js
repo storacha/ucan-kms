@@ -40,7 +40,10 @@ describe('KmsRateLimiter', () => {
       GOOGLE_KMS_PROJECT_ID: 'test',
       GOOGLE_KMS_LOCATION: 'test',
       GOOGLE_KMS_KEYRING_NAME: 'test',
-      GOOGLE_KMS_TOKEN: 'test'
+      GOOGLE_KMS_TOKEN: 'test',
+
+      UPLOAD_SERVICE_DID: '',
+      UPLOAD_SERVICE_URL: '',
     }
 
     rateLimiter = new KmsRateLimiter(env, {

@@ -5,18 +5,21 @@ import { Schema } from '@ucanto/validator'
 import { error, Failure } from '@ucanto/server'
 import { EncryptionSetup, EncryptionKeyDecrypt } from '@storacha/capabilities/space'
 
+
+
 /**
  * @param {import('./api.types.js').Context} ctx
  * @param {import('./types/env.js').Env} env
  * @returns {import('./api.types.js').Service}
  */
 export function createService (ctx, env) {
+  const AudienceSchema = Schema.literal(ctx.ucanKmsIdentity.did()).or(Schema.literal(ctx.ucanKmsSigner.did()))
   return {
     space: {
       encryption: {
         setup: UcantoServer.provideAdvanced({
           capability: EncryptionSetup,
-          audience: Schema.did({ method: 'web' }),
+          audience: AudienceSchema,
           handler: async ({ capability, invocation }) => {
             if (ctx.kmsRateLimiter) {
               const rateLimitViolation = await ctx.kmsRateLimiter.checkRateLimit(invocation, EncryptionSetup.can, capability.with)
@@ -44,7 +47,7 @@ export function createService (ctx, env) {
         key: {
           decrypt: UcantoServer.provideAdvanced({
             capability: EncryptionKeyDecrypt,
-            audience: Schema.did({ method: 'web' }),
+            audience: AudienceSchema,
             handler: async ({ capability, invocation }) => {
               if (ctx.kmsRateLimiter) {
                 const rateLimitViolation = await ctx.kmsRateLimiter.checkRateLimit(invocation, EncryptionKeyDecrypt.can, capability.with)

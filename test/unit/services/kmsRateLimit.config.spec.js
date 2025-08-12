@@ -54,10 +54,12 @@ describe('Service Integration - KMS Rate Limiting', () => {
       decryptSymmetricKey: sandbox.stub()
     }
 
+    const signer = await ed25519.Signer.generate()
     mockContext = {
       kmsRateLimiter: mockRateLimiter,
       kms: mockKms,
-      ucanKmsIdentity: await ed25519.Signer.generate(),
+      ucanKmsIdentity: signer.withDID('did:web:test.kms.storacha.network'),
+      ucanKmsSigner: signer,
       ucanPrivacyValidationService: {
         validateEncryption: sandbox.stub(),
         validateDecryption: sandbox.stub()

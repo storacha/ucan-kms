@@ -161,29 +161,29 @@ describe('StorachaStorageService', () => {
       }
     })
 
-    it('should handle client creation errors', async () => {
-      // Create a service that will fail during client creation
-      // We'll mock the createClient import to throw an error
-      const failingService = new StorachaStorageService({ signer: mockSigner })
+    // it('should handle client creation errors', async () => {
+    //   // Create a service that will fail during client creation
+    //   // We'll mock the createClient import to throw an error
+    //   const failingService = new StorachaStorageService({ signer: mockSigner })
       
-      // Override the clientPromise to reject
-      failingService.clientPromise = Promise.reject(new Error('Client creation failed'))
+    //   // Override the clientPromise to reject
+    //   failingService.clientPromise = Promise.reject(new Error('Client creation failed'))
 
-      // Create mock delegation
-      const mockDelegation = /** @type {any} */({
-        capabilities: [{
-          can: Plan.get.can,
-          with: accountDID
-        }]
-      })
+    //   // Create mock delegation
+    //   const mockDelegation = /** @type {any} */({
+    //     capabilities: [{
+    //       can: Plan.get.can,
+    //       with: accountDID
+    //     }]
+    //   })
 
-      try {
-        await failingService.getPlan(mockDelegation)
-        expect.fail('Should have thrown an error')
-      } catch (error) {
-        expect(error instanceof Error ? error.message : String(error)).to.equal('Client creation failed')
-      }
-    })
+    //   try {
+    //     await failingService.getPlan(mockDelegation)
+    //     expect.fail('Should have thrown an error')
+    //   } catch (error) {
+    //     expect(error instanceof Error ? error.message : String(error)).to.equal('Client creation failed')
+    //   }
+    // })
   })
 
   describe('isPaidPlan', () => {

@@ -1,6 +1,7 @@
-import { create as createClient } from '@storacha/client'
-import { StoreMemory } from '@storacha/client/stores'
 import { Plan } from '@storacha/capabilities'
+import { AgentData } from '@storacha/access/agent'
+import { Client as StorachaClient } from '@storacha/client'
+import { gatewayServiceConnection, uploadServiceConnection } from '@storacha/client/service'
 
 /**
  * Service for interacting with Storacha storage and plan management
@@ -10,16 +11,37 @@ export class StorachaStorageService {
    * Creates a new StorachaStorageService
    * @param {Object} [options] - Service options
    * @param {import('@storacha/client').Client} [options.client] - Pre-configured Storacha client
+   * @param {import('@storacha/access').SpaceDID} [options.space] - The space DID to use
    * @param {import('@ucanto/interface').Signer<`did:key:${string}`, any>} [options.signer] - Signer to create client with
+   * @param {URL} [options.uploadServiceURL] - Upload service URL
+   * @param {import('@ucanto/interface').DID} [options.uploadServiceDID] - Upload service DID
    */
   constructor(options = {}) {
     if (options.client) {
       this.client = options.client
     } else if (options.signer) {
-      // Create client immediately in constructor
-      this.clientPromise = createClient({
+      const agentData = new AgentData({
         principal: options.signer,
-        store: new StoreMemory(),
+        delegations: new Map(),
+        spaces: new Map(),
+        currentSpace: options.space,
+        meta: {
+          name: 'ucan-kms',
+          type: 'service',
+          description: 'Storacha UCAN KMS',
+        },
+      })
+      const connection = uploadServiceConnection({
+        id: {did: () => /** @type {import('@ucanto/interface').DID} */(options.uploadServiceDID) },
+        url: options.uploadServiceURL,
+      })
+      this.client = new StorachaClient(agentData, {
+        serviceConf: {
+          access: connection,
+          upload: connection,
+          filecoin: connection,
+          gateway: gatewayServiceConnection(),
+        },
       })
     } else {
       throw new Error('Either client or signer must be provided')
@@ -34,11 +56,6 @@ export class StorachaStorageService {
     if (this.client) {
       return this.client
     }
-    if (this.clientPromise) {
-      this.client = await this.clientPromise
-      this.clientPromise = undefined // Clear the promise after resolving
-      return this.client
-    }
     throw new Error('No client available')
   }
 
@@ -51,21 +68,15 @@ export class StorachaStorageService {
    */
   async getPlan(planGetDelegation) {
     const client = await this.getClient()
-
-    // Add the plan/get delegation proof to the client
     await client.addProof(planGetDelegation)
 
-    // Extract the account DID from the delegation capability
     const [capability] = planGetDelegation.capabilities
     const accountDID = capability.with
-
-    // Get proofs for the plan/get capability
     const clientProofs = client.proofs([{
       can: Plan.get.can,
       with: accountDID,
     }])
 
-    // Invoke plan/get to retrieve the plan information
     const receipt = await client.agent.invokeAndExecute(Plan.get, {
       with: accountDID,
       proofs: clientProofs

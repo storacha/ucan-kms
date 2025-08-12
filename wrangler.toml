@@ -37,6 +37,8 @@ kv_namespaces = [
 [env.production.vars]
 ENVIRONMENT = "production"
 UCAN_KMS_SERVICE_DID = "did:web:kms.storacha.network"
+UPLOAD_SERVICE_URL = "https://up.storacha.network"
+UPLOAD_SERVICE_DID = "did:web:up.storacha.network"
 # REVOCATION_STATUS_SERVICE_URL = "https://up.web3.storage"
 
 # Production Environment-specific FEATURE FLAGS
@@ -71,6 +73,8 @@ kv_namespaces = [
 [env.staging.vars]
 ENVIRONMENT = "staging"
 UCAN_KMS_SERVICE_DID = "did:web:staging.kms.storacha.link"
+UPLOAD_SERVICE_URL = "https://staging.up.storacha.network"
+UPLOAD_SERVICE_DID = "did:web:staging.up.storacha.network"
 # REVOCATION_STATUS_SERVICE_URL = "https://up.web3.storage"
 
 # Staging Environment-specific FEATURE FLAGS
@@ -103,7 +107,9 @@ kv_namespaces = [
 # Forbeck Environment-specific variables
 [env.fforbeck.vars]
 ENVIRONMENT = "development"
-UCAN_KMS_SERVICE_DID = "did:web:dev.kms.storacha.link"
+UCAN_KMS_SERVICE_DID = "did:web:staging.kms.storacha.link"
+UPLOAD_SERVICE_URL = "https://staging.up.storacha.network"
+UPLOAD_SERVICE_DID = "did:web:staging.up.storacha.network"
 # REVOCATION_STATUS_SERVICE_URL = "https://up.web3.storage"
 
 # Forbeck Environment-specific FEATURE FLAGS

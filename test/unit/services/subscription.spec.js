@@ -49,6 +49,18 @@ describe('PlanSubscriptionService', () => {
     
     // Create service with mock dependencies
     service = new PlanSubscriptionServiceImpl({
+      UPLOAD_SERVICE_DID: '',
+      UPLOAD_SERVICE_URL: '',
+      UCAN_KMS_PRINCIPAL_KEY: '',
+      UCAN_KMS_SERVICE_DID: '',
+      FF_DECRYPTION_ENABLED: '',
+      FF_KMS_RATE_LIMITER_ENABLED: '',
+      GOOGLE_KMS_PROJECT_ID: '',
+      GOOGLE_KMS_LOCATION: '',
+      GOOGLE_KMS_KEYRING_NAME: '',
+      GOOGLE_KMS_TOKEN: '',
+      ENVIRONMENT: 'test'
+    },{
       auditLog: mockAuditLog,
       storachaStorage: mockStorachaStorage,
       environment: 'test'
@@ -61,7 +73,19 @@ describe('PlanSubscriptionService', () => {
 
   describe('constructor', () => {
     it('should create service with default audit log when none provided', () => {
-      const defaultService = new PlanSubscriptionServiceImpl()
+      const defaultService = new PlanSubscriptionServiceImpl({
+        UPLOAD_SERVICE_DID: '',
+        UPLOAD_SERVICE_URL: '',
+        UCAN_KMS_PRINCIPAL_KEY: '',
+        UCAN_KMS_SERVICE_DID: '',
+        FF_DECRYPTION_ENABLED: '',
+        FF_KMS_RATE_LIMITER_ENABLED: '',
+        GOOGLE_KMS_PROJECT_ID: '',
+        GOOGLE_KMS_LOCATION: '',
+        GOOGLE_KMS_KEYRING_NAME: '',
+        GOOGLE_KMS_TOKEN: '',
+        ENVIRONMENT: 'test'
+      })
       expect(defaultService.auditLog).to.be.instanceOf(AuditLogService)
     })
 
@@ -70,6 +94,18 @@ describe('PlanSubscriptionService', () => {
       const mockClient = /** @type {any} */({ addProof: sinon.stub() })
       const customStorageService = new StorachaStorageService({ client: mockClient })
       const customService = new PlanSubscriptionServiceImpl({
+        UPLOAD_SERVICE_DID: '',
+        UPLOAD_SERVICE_URL: '',
+        UCAN_KMS_PRINCIPAL_KEY: '',
+        UCAN_KMS_SERVICE_DID: '',
+        FF_DECRYPTION_ENABLED: '',
+        FF_KMS_RATE_LIMITER_ENABLED: '',
+        GOOGLE_KMS_PROJECT_ID: '',
+        GOOGLE_KMS_LOCATION: '',
+        GOOGLE_KMS_KEYRING_NAME: '',
+        GOOGLE_KMS_TOKEN: '',
+        ENVIRONMENT: 'test'
+      },{
         auditLog: customAuditLog,
         storachaStorage: customStorageService
       })
@@ -78,7 +114,19 @@ describe('PlanSubscriptionService', () => {
     })
 
     it('should use provided environment', () => {
-      const customService = new PlanSubscriptionServiceImpl({ environment: 'production' })
+      const customService = new PlanSubscriptionServiceImpl({
+        UPLOAD_SERVICE_DID: '',
+        UPLOAD_SERVICE_URL: '',
+        UCAN_KMS_PRINCIPAL_KEY: '',
+        UCAN_KMS_SERVICE_DID: '',
+        FF_DECRYPTION_ENABLED: '',
+        FF_KMS_RATE_LIMITER_ENABLED: '',
+        GOOGLE_KMS_PROJECT_ID: '',
+        GOOGLE_KMS_LOCATION: '',
+        GOOGLE_KMS_KEYRING_NAME: '',
+        GOOGLE_KMS_TOKEN: '',
+        ENVIRONMENT: 'test'
+      }, { environment: 'production' })
       expect(customService.auditLog).to.be.instanceOf(AuditLogService)
       expect(customService.storachaStorage).to.be.undefined
     })
@@ -180,7 +228,7 @@ describe('PlanSubscriptionService', () => {
       const result = await service.isProvisioned(spaceDID, [mockProof], mockContext)
 
       expect(result.error).to.exist
-      expect(result.error?.message).to.equal('Not a paid plan')
+      expect(result.error?.message).to.equal('User is not subscribed to a paid plan')
       sinon.assert.calledWith(
         mockAuditLog.logSecurityEvent,
         'subscription_plan_invalid',

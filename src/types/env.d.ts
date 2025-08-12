@@ -66,4 +66,14 @@ export interface Env {
    * Cloudflare KV namespace for storing rate limit counters
    */
   KMS_RATE_LIMIT_KV?: KVNamespace;
+
+  /**
+   * Upload service URL
+   */
+  UPLOAD_SERVICE_URL: string;
+
+  /**
+   * Upload service DID
+   */
+  UPLOAD_SERVICE_DID: string;
 }
