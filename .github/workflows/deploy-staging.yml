@@ -63,4 +63,4 @@ jobs:
       - name: Create deployment summary
         run: |
           echo "Deployment successful!"
-          echo "Staging URL: https://ucan-kms-staging.storacha.workers.dev"
+          echo "Staging URL: https://ucan-kms-staging.protocol-labs.workers.dev"
