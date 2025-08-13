@@ -57,7 +57,7 @@ export interface Context<T = unknown, U = unknown> {
   /**
    * Subscription status service for space plan validation
    */
-  subscriptionStatusService?: SubscriptionStatusService
+  subscriptionStatusService: SubscriptionStatusService
 
   /**
    * UCAN privacy validation service for validating delegations

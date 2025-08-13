@@ -47,8 +47,8 @@ export async function handleKeyDecryption (request, invocation, ctx, env) {
       return error(validationResult.error)
     }
 
-    // Step 2: Validate space has paid plan (if subscription service is available)
-    const planResult = await ctx.subscriptionStatusService?.isProvisioned(request.space, proofs, ctx)
+    // Step 2: Validate space has paid plan
+    const planResult = await ctx.subscriptionStatusService.isProvisioned(request.space, proofs, ctx)
     if (planResult?.error) {
       const errorMsg = planResult.error.message || 'Subscription validation failed'
       auditLog.logInvocation(request.space, EncryptionKeyDecrypt.can, false, 'Subscription validation failed: ' + errorMsg, invocationCid, Date.now() - startTime)

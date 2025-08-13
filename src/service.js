@@ -5,8 +5,6 @@ import { Schema } from '@ucanto/validator'
 import { error, Failure } from '@ucanto/server'
 import { EncryptionSetup, EncryptionKeyDecrypt } from '@storacha/capabilities/space'
 
-
-
 /**
  * @param {import('./api.types.js').Context} ctx
  * @param {import('./types/env.js').Env} env
