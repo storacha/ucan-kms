@@ -40,7 +40,10 @@ describe('KmsRateLimiter', () => {
       GOOGLE_KMS_PROJECT_ID: 'test',
       GOOGLE_KMS_LOCATION: 'test',
       GOOGLE_KMS_KEYRING_NAME: 'test',
-      GOOGLE_KMS_TOKEN: 'test'
+      GOOGLE_KMS_TOKEN: 'test',
+
+      UPLOAD_SERVICE_DID: '',
+      UPLOAD_SERVICE_URL: '',
     }
 
     rateLimiter = new KmsRateLimiter(env, {
@@ -91,7 +94,7 @@ describe('KmsRateLimiter', () => {
     })
 
     it('should block operations when per-space limit exceeded', async () => {
-      mockKV.get.resolves('1') // At limit for setup (limit is 1)
+      mockKV.get.resolves('3') // At limit for setup (limit is 3)
 
       const result = await rateLimiter.checkRateLimit(mockInvocation, 'space/encryption/setup', spaceDID)
 
@@ -153,7 +156,7 @@ describe('KmsRateLimiter', () => {
     })
 
     it('should log rate limit exceeded events to audit log', async () => {
-      mockKV.get.resolves('1') // At limit for setup (limit is 1)
+      mockKV.get.resolves('3') // At limit for setup (limit is 3)
 
       /** @type {any} */
       const mockAuditLog = {
@@ -316,7 +319,7 @@ describe('KmsRateLimiter', () => {
       const limits = KmsRateLimiter.RATE_LIMITS['space/encryption/setup']
 
       expect(limits).to.deep.equal({
-        perSpace: 1,
+        perSpace: 3,
         perUser: 20,
         global: 500,
         windowMinutes: 15

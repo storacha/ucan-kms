@@ -370,6 +370,8 @@ describe('GoogleKMSService', () => {
       GOOGLE_KMS_LOCATION: 'global',
       GOOGLE_KMS_KEYRING_NAME: 'test-keyring',
       GOOGLE_KMS_TOKEN: 'valid_token_1234567890',
+      UPLOAD_SERVICE_DID: '',
+      UPLOAD_SERVICE_URL: '',
       ...overrides
     }
   }
@@ -390,7 +392,9 @@ describe('GoogleKMSService', () => {
         GOOGLE_KMS_PROJECT_ID: 'X',
         GOOGLE_KMS_LOCATION: 'global',
         GOOGLE_KMS_KEYRING_NAME: 'test-keyring',
-        GOOGLE_KMS_TOKEN: 'valid_token_1234567890'
+        GOOGLE_KMS_TOKEN: 'valid_token_1234567890',
+        UPLOAD_SERVICE_DID: '',
+        UPLOAD_SERVICE_URL: '',
       }
 
       expect(() => new GoogleKMSService(invalidEnv))
@@ -406,7 +410,9 @@ describe('GoogleKMSService', () => {
         GOOGLE_KMS_PROJECT_ID: 'Invalid_Project_ID',
         GOOGLE_KMS_LOCATION: 'global',
         GOOGLE_KMS_KEYRING_NAME: 'test-keyring',
-        GOOGLE_KMS_TOKEN: 'valid_token_1234567890'
+        GOOGLE_KMS_TOKEN: 'valid_token_1234567890',
+        UPLOAD_SERVICE_DID: '',
+        UPLOAD_SERVICE_URL: '',
       }
 
       expect(() => new GoogleKMSService(invalidEnv))
@@ -422,7 +428,9 @@ describe('GoogleKMSService', () => {
         GOOGLE_KMS_PROJECT_ID: 'test-project',
         GOOGLE_KMS_LOCATION: '',
         GOOGLE_KMS_KEYRING_NAME: 'test-keyring',
-        GOOGLE_KMS_TOKEN: 'valid_token_1234567890'
+        GOOGLE_KMS_TOKEN: 'valid_token_1234567890',
+        UPLOAD_SERVICE_DID: '',
+        UPLOAD_SERVICE_URL: '',
       }
 
       expect(() => new GoogleKMSService(invalidEnv))
@@ -438,7 +446,9 @@ describe('GoogleKMSService', () => {
         GOOGLE_KMS_PROJECT_ID: 'test-project',
         GOOGLE_KMS_LOCATION: 'global',
         GOOGLE_KMS_KEYRING_NAME: '',
-        GOOGLE_KMS_TOKEN: 'valid_token_1234567890'
+        GOOGLE_KMS_TOKEN: 'valid_token_1234567890',
+        UPLOAD_SERVICE_DID: '',
+        UPLOAD_SERVICE_URL: '',
       }
 
       expect(() => new GoogleKMSService(invalidEnv))
@@ -454,7 +464,9 @@ describe('GoogleKMSService', () => {
         GOOGLE_KMS_PROJECT_ID: 'test-project',
         GOOGLE_KMS_LOCATION: 'global',
         GOOGLE_KMS_KEYRING_NAME: 'test-keyring',
-        GOOGLE_KMS_TOKEN: 'x' // Too short
+        GOOGLE_KMS_TOKEN: 'x',
+        UPLOAD_SERVICE_DID: '',
+        UPLOAD_SERVICE_URL: '',
       }
 
       expect(() => new GoogleKMSService(invalidEnv))
@@ -483,7 +495,9 @@ describe('GoogleKMSService', () => {
         GOOGLE_KMS_PROJECT_ID: 'X',
         GOOGLE_KMS_LOCATION: '',
         GOOGLE_KMS_KEYRING_NAME: '',
-        GOOGLE_KMS_TOKEN: 'x'
+        GOOGLE_KMS_TOKEN: 'x',
+        UPLOAD_SERVICE_DID: '',
+        UPLOAD_SERVICE_URL: '',
       }
 
       try {

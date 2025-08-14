@@ -36,6 +36,7 @@ describe('Encryption Setup Handler', () => {
     
     // Mock invocation
     mockInvocation = {
+      cid: { toString: () => 'invocation-cid-123' },
       proofs: []
     }
     
@@ -103,7 +104,7 @@ describe('Encryption Setup Handler', () => {
       EncryptionSetup.can,
       true,
       undefined,
-      undefined,
+      'invocation-cid-123',
       sinon.match.number
     ))
   })
@@ -122,7 +123,7 @@ describe('Encryption Setup Handler', () => {
       EncryptionSetup.can,
       false,
       'Encryption setup is not enabled',
-      undefined,
+      'invocation-cid-123',
       sinon.match.number
     ))
   })
@@ -142,7 +143,7 @@ describe('Encryption Setup Handler', () => {
       EncryptionSetup.can,
       false,
       'Encryption setup not available - ucanKms identity not configured',
-      undefined,
+      'invocation-cid-123',
       sinon.match.number
     ))
   })
@@ -217,7 +218,7 @@ describe('Encryption Setup Handler', () => {
       validateEncryption: sinon.stub().resolves({ ok: true })
     }
     mockCtx.subscriptionStatusService = {
-      isProvisioned: sinon.stub().resolves({ ok: { ok: true } })
+      isProvisioned: sinon.stub().resolves({ ok: { isProvisioned: true } })
     }
     mockCtx.kms = {
       setupKeyForSpace: sinon.stub().resolves({ error: new Error('Failed to setup key') })
@@ -234,7 +235,7 @@ describe('Encryption Setup Handler', () => {
       EncryptionSetup.can,
       false,
       'KMS setup failed',
-      undefined,
+      'invocation-cid-123',
       sinon.match.number
     ))
   })

@@ -22,7 +22,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 8
+          version: 10.14.0
           run_install: false
 
       - name: Get pnpm store directory
@@ -63,4 +63,4 @@ jobs:
       - name: Create deployment summary
         run: |
           echo "Deployment successful!"
-          echo "Staging URL: https://ucan-kms-staging.storacha.workers.dev"
+          echo "Staging URL: https://ucan-kms-staging.protocol-labs.workers.dev"

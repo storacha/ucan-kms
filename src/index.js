@@ -8,6 +8,7 @@ import { Schema as UcantoSchema } from '@ucanto/core'
 import { RevocationStatusServiceImpl } from './services/revocation.js'
 import { PlanSubscriptionServiceImpl } from './services/subscription.js'
 import { UcanPrivacyValidationServiceImpl } from './services/ucanValidation.js'
+import packageJson from '../package.json' with { type: "json" }
 
 export default {
   /**
@@ -18,7 +19,7 @@ export default {
    * @returns
    */
   async fetch (request, env, ctx) {
-    // UCAN Server needs to handle OPTIONS requests
+    // UCAN Server needs to handle OPTIONS requests  
     if (request.method === 'OPTIONS') {
       const headers = new Headers()
       headers.set('Access-Control-Allow-Origin', '*')
@@ -26,6 +27,17 @@ export default {
       headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization')
       return new Response(null, { headers, status: 204 })
     }
+
+    const ucanKmsSigner = ed25519.Signer.parse(env.UCAN_KMS_PRINCIPAL_KEY);
+    const ucanKmsIdentity = ucanKmsSigner.withDID(
+      UcantoSchema.DID.from(env.UCAN_KMS_SERVICE_DID)
+    );
+
+    if (request.method === 'GET' && new URL(request.url).pathname === '/') {
+      const apiInfo = `🔥 ucan-kms v${packageJson.version}\nhttps://github.com/storacha/ucan-kms\n${ucanKmsIdentity.did()}\n${ucanKmsSigner.did()}`
+      return new Response(apiInfo, { status: 200 })
+    }
+
     if (request.method !== 'POST' || new URL(request.url).pathname !== '/') {
       // Not supported
       return new Response(null, { status: 405 })
@@ -40,18 +52,13 @@ export default {
 
     try {
       // Prepare context
-      const ucanKmsSigner = ed25519.Signer.parse(env.UCAN_KMS_PRINCIPAL_KEY);
-      const ucanKmsIdentity = ucanKmsSigner.withDID(
-        UcantoSchema.DID.from(env.UCAN_KMS_SERVICE_DID)
-      );
-            
       // Add services to the existing context
       ctx.ucanKmsSigner = ucanKmsSigner;
       ctx.ucanKmsIdentity = ucanKmsIdentity;
       ctx.kms = new GoogleKMSService(env, { auditLog, environment: env.ENVIRONMENT });
       ctx.kmsRateLimiter = new KmsRateLimiter(env, { auditLog });
       ctx.revocationStatusService = new RevocationStatusServiceImpl({ auditLog });
-      ctx.subscriptionStatusService = new PlanSubscriptionServiceImpl({ auditLog });
+      ctx.subscriptionStatusService = new PlanSubscriptionServiceImpl(env, { auditLog });
       ctx.ucanPrivacyValidationService = new UcanPrivacyValidationServiceImpl({ auditLog });
 
       // Create service handler and ucan server
@@ -70,7 +77,12 @@ export default {
       responseHeaders.set('Access-Control-Allow-Headers', 'Content-Type, Authorization')
       
       // Convert ByteView to Uint8Array for Response constructor
-      const responseBody = body instanceof Uint8Array ? body : new Uint8Array(body)
+      // TypeScript workaround: explicitly cast the body to handle ByteView types
+      const responseBody = /** @type {Uint8Array} */ (
+        body instanceof Uint8Array 
+          ? body 
+          : new Uint8Array(body)
+      )
       return new Response(responseBody, { status: 200, headers: responseHeaders })
     } catch (error) {
       console.error('Error processing request:', error)

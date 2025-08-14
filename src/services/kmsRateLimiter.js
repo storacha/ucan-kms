@@ -16,7 +16,7 @@ export class KmsRateLimiter {
    */
   static RATE_LIMITS = /** @type {Record<string, RateLimitConfig>} */ ({
     [EncryptionSetup.can]: {
-      perSpace: 1, // 1 setup per space per 15min (since setup happens only once per space)
+      perSpace: 3, // 3 setup per space per 15min (setup happens only once per space, but allows user to retry if he subscribes to a paid plan)
       perUser: 20, // 20 space setups per user per 15min (allows bulk space creation)
       global: 500, // 500 total setups per 15min across all users
       windowMinutes: 15 // 15-minute windows

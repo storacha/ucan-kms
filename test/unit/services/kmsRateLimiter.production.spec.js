@@ -213,7 +213,7 @@ describe('KmsRateLimiter - Production Scenarios', () => {
     const spaceDID = 'did:key:z6Mko5igLB7NBgBcDYjM7MnRZDFKCLYAfbsEYAnx8HRJGJmu'
 
     it('should calculate retry times correctly near window boundaries', async () => {
-      mockKV.get.resolves('1') // At limit for setup
+      mockKV.get.resolves('3') // At limit for setup
 
       const result = await rateLimiter.checkRateLimit(validInvocation, 'space/encryption/setup', spaceDID)
 

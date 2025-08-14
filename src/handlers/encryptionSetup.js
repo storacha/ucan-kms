@@ -20,6 +20,7 @@ export async function handleEncryptionSetup (request, invocation, ctx, env) {
   const startTime = Date.now()
   // Extract invocation CID for audit correlation
   const invocationCid = invocation.cid?.toString()
+  const proofs = invocation.proofs
   
   try {
     // Validate inputs first before logging any success
@@ -42,8 +43,8 @@ export async function handleEncryptionSetup (request, invocation, ctx, env) {
       return error(ucanValidationResult.error)
     }
 
-    // Step 2: Validate space has paid plan (if subscription service is available)
-    const planResult = await ctx.subscriptionStatusService?.isProvisioned(request.space, env)
+    // Step 2: Validate space has paid plan
+    const planResult = await ctx.subscriptionStatusService.isProvisioned(request.space, proofs, ctx)
     if (planResult?.error) {
       const errorMsg = planResult.error.message || 'Subscription validation failed'
       auditLog.logInvocation(request.space, EncryptionSetup.can, false, 'Subscription validation failed: ' + errorMsg, invocationCid, Date.now() - startTime)
