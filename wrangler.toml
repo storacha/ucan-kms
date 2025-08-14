@@ -14,7 +14,7 @@ GOOGLE_KMS_KEYRING_NAME = "ucan-kms-staging-keyring"
 ENVIRONMENT = "development"
 FF_DECRYPTION_ENABLED = "true"
 FF_KMS_RATE_LIMITER_ENABLED = "true"
-UCAN_KMS_SERVICE_DID = "did:web:dev.kms.storacha.link"
+UCAN_KMS_SERVICE_DID = "did:web:dev.kms.storacha.network"
 
 ########################################################
 #### PRODUCTION ENVIRONMENT CONFIGURATION
@@ -63,7 +63,7 @@ enabled = true
 [env.staging]
 workers_dev = true
 account_id = "fffa4b4363a7e5250af8357087263b3a"
-#route = { pattern = "https://staging.kms.storacha.link/*", zone_id = "TBD" }
+#route = { pattern = "https://staging.kms.storacha.network/*", zone_id = "TBD" }
 r2_buckets = []
 kv_namespaces = [
   { binding = "KMS_RATE_LIMIT_KV", id = "3fd03e7be796478fbb92c2aa6a62f767" }
@@ -72,7 +72,7 @@ kv_namespaces = [
 # Staging Environment-specific variables
 [env.staging.vars]
 ENVIRONMENT = "staging"
-UCAN_KMS_SERVICE_DID = "did:web:staging.kms.storacha.link"
+UCAN_KMS_SERVICE_DID = "did:web:staging.kms.storacha.network"
 UPLOAD_SERVICE_URL = "https://staging.up.storacha.network"
 UPLOAD_SERVICE_DID = "did:web:staging.up.storacha.network"
 # REVOCATION_STATUS_SERVICE_URL = "https://up.web3.storage"
@@ -107,7 +107,7 @@ kv_namespaces = [
 # Forbeck Environment-specific variables
 [env.fforbeck.vars]
 ENVIRONMENT = "development"
-UCAN_KMS_SERVICE_DID = "did:web:staging.kms.storacha.link"
+UCAN_KMS_SERVICE_DID = "did:web:staging.kms.storacha.network"
 UPLOAD_SERVICE_URL = "https://staging.up.storacha.network"
 UPLOAD_SERVICE_DID = "did:web:staging.up.storacha.network"
 # REVOCATION_STATUS_SERVICE_URL = "https://up.web3.storage"
