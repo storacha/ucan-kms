@@ -8,20 +8,17 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  issues: write
 
 jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: google-github-actions/release-please-action@v4
+      - uses: googleapis/release-please-action@v4
         id: release
         with:
           # This specifies which files to bump
           release-type: node
-          # Optional: customize the package name
-          package-name: ucan-kms
-          # Optional: customize changelog sections
-          changelog-types: '[{"type":"feat","section":"Features","hidden":false},{"type":"fix","section":"Bug Fixes","hidden":false},{"type":"docs","section":"Documentation","hidden":false},{"type":"style","section":"Styles","hidden":false},{"type":"refactor","section":"Code Refactoring","hidden":false},{"type":"perf","section":"Performance Improvements","hidden":false},{"type":"test","section":"Tests","hidden":false},{"type":"build","section":"Build System","hidden":false},{"type":"ci","section":"Continuous Integration","hidden":false},{"type":"chore","section":"Chores","hidden":true}]'
 
       # The logic below handles the case where a release is created
       - name: Checkout code
@@ -38,7 +35,6 @@ jobs:
         if: ${{ steps.release.outputs.release_created }}
         uses: pnpm/action-setup@v4
         with:
-          version: 10.14.0
           run_install: false
 
       - name: Get pnpm store directory
