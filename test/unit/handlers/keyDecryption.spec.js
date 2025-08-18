@@ -64,9 +64,7 @@ describe('Key Decryption Handler', () => {
     }
     
     // Mock environment
-    mockEnv = {
-      FF_DECRYPTION_ENABLED: 'true'
-    }
+    mockEnv = {}
     
     // Stub AuditLogService
     auditLogStub = sandbox.stub(AuditLogService.prototype, 'logInvocation')
@@ -108,25 +106,6 @@ describe('Key Decryption Handler', () => {
       EncryptionKeyDecrypt.can,
       true,
       undefined,
-      'invocation-cid-123',
-      sinon.match.number
-    ))
-  })
-
-  it('should return error when decryption is disabled', async () => {
-    mockEnv.FF_DECRYPTION_ENABLED = 'false'
-    
-    const result = await handleKeyDecryption(mockRequest, mockInvocation, mockCtx, mockEnv)
-    
-    assert(!result.ok)
-    assert.equal(result.error?.message, 'Decryption is not enabled')
-    
-    // Verify audit log was called with error
-    assert(auditLogStub.calledWith(
-      mockRequest.space,
-      EncryptionKeyDecrypt.can,
-      false,
-      'Decryption is not enabled',
       'invocation-cid-123',
       sinon.match.number
     ))

@@ -22,12 +22,6 @@ export async function handleKeyDecryption (request, invocation, ctx, env) {
   const proofs = invocation.proofs
 
   try {
-    if (env.FF_DECRYPTION_ENABLED !== 'true') {
-      const errorMsg = 'Decryption is not enabled'
-      auditLog.logInvocation(request.space, EncryptionKeyDecrypt.can, false, errorMsg, invocationCid, Date.now() - startTime)
-      return error(new Failure(errorMsg))
-    }
-
     if (!ctx.ucanKmsIdentity) {
       const errorMsg = 'Encryption not available - ucanKms identity not configured'
       auditLog.logInvocation(request.space, EncryptionKeyDecrypt.can, false, errorMsg, invocationCid, Date.now() - startTime)

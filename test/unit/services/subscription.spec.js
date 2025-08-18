@@ -53,7 +53,6 @@ describe('PlanSubscriptionService', () => {
       UPLOAD_SERVICE_URL: '',
       UCAN_KMS_PRINCIPAL_KEY: '',
       UCAN_KMS_SERVICE_DID: '',
-      FF_DECRYPTION_ENABLED: '',
       FF_KMS_RATE_LIMITER_ENABLED: '',
       GOOGLE_KMS_PROJECT_ID: '',
       GOOGLE_KMS_LOCATION: '',
@@ -78,7 +77,6 @@ describe('PlanSubscriptionService', () => {
         UPLOAD_SERVICE_URL: '',
         UCAN_KMS_PRINCIPAL_KEY: '',
         UCAN_KMS_SERVICE_DID: '',
-        FF_DECRYPTION_ENABLED: '',
         FF_KMS_RATE_LIMITER_ENABLED: '',
         GOOGLE_KMS_PROJECT_ID: '',
         GOOGLE_KMS_LOCATION: '',
@@ -92,13 +90,12 @@ describe('PlanSubscriptionService', () => {
     it('should use provided audit log and storage service', () => {
       const customAuditLog = new AuditLogService({ serviceName: 'custom', environment: 'test' })
       const mockClient = /** @type {any} */({ addProof: sinon.stub() })
-      const customStorageService = new StorachaStorageService({ client: mockClient })
+      const customStorageService = new StorachaStorageService()
       const customService = new PlanSubscriptionServiceImpl({
         UPLOAD_SERVICE_DID: '',
         UPLOAD_SERVICE_URL: '',
         UCAN_KMS_PRINCIPAL_KEY: '',
         UCAN_KMS_SERVICE_DID: '',
-        FF_DECRYPTION_ENABLED: '',
         FF_KMS_RATE_LIMITER_ENABLED: '',
         GOOGLE_KMS_PROJECT_ID: '',
         GOOGLE_KMS_LOCATION: '',
@@ -119,7 +116,6 @@ describe('PlanSubscriptionService', () => {
         UPLOAD_SERVICE_URL: '',
         UCAN_KMS_PRINCIPAL_KEY: '',
         UCAN_KMS_SERVICE_DID: '',
-        FF_DECRYPTION_ENABLED: '',
         FF_KMS_RATE_LIMITER_ENABLED: '',
         GOOGLE_KMS_PROJECT_ID: '',
         GOOGLE_KMS_LOCATION: '',

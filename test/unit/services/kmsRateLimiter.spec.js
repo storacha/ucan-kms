@@ -35,7 +35,6 @@ describe('KmsRateLimiter', () => {
       KMS_RATE_LIMIT_KV: mockKV,
       UCAN_KMS_PRINCIPAL_KEY: 'test',
       UCAN_KMS_SERVICE_DID: 'test',
-      FF_DECRYPTION_ENABLED: 'true',
 
       GOOGLE_KMS_PROJECT_ID: 'test',
       GOOGLE_KMS_LOCATION: 'test',

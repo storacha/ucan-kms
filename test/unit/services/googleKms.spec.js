@@ -25,7 +25,6 @@ describe('GoogleKMSService', () => {
     env = {
       UCAN_KMS_PRINCIPAL_KEY: 'test-principal-key',
       UCAN_KMS_SERVICE_DID: 'did:web:test.example.com',
-      FF_DECRYPTION_ENABLED: 'true',
       FF_KMS_RATE_LIMITER_ENABLED: 'true',
       GOOGLE_KMS_PROJECT_ID: 'test-project',
       GOOGLE_KMS_LOCATION: 'global',
@@ -364,7 +363,6 @@ describe('GoogleKMSService', () => {
     return {
       UCAN_KMS_PRINCIPAL_KEY: 'test-principal-key',
       UCAN_KMS_SERVICE_DID: 'did:web:test.example.com',
-      FF_DECRYPTION_ENABLED: 'true',
       FF_KMS_RATE_LIMITER_ENABLED: 'true',
       GOOGLE_KMS_PROJECT_ID: 'test-project',
       GOOGLE_KMS_LOCATION: 'global',
@@ -387,7 +385,6 @@ describe('GoogleKMSService', () => {
       const invalidEnv = {
         UCAN_KMS_PRINCIPAL_KEY: 'test-principal-key',
         UCAN_KMS_SERVICE_DID: 'did:web:test.example.com',
-        FF_DECRYPTION_ENABLED: 'true',
         FF_KMS_RATE_LIMITER_ENABLED: 'true',
         GOOGLE_KMS_PROJECT_ID: 'X',
         GOOGLE_KMS_LOCATION: 'global',
@@ -405,7 +402,6 @@ describe('GoogleKMSService', () => {
       const invalidEnv = {
         UCAN_KMS_PRINCIPAL_KEY: 'test-principal-key',
         UCAN_KMS_SERVICE_DID: 'did:web:test.example.com',
-        FF_DECRYPTION_ENABLED: 'true',
         FF_KMS_RATE_LIMITER_ENABLED: 'true',
         GOOGLE_KMS_PROJECT_ID: 'Invalid_Project_ID',
         GOOGLE_KMS_LOCATION: 'global',
@@ -423,7 +419,6 @@ describe('GoogleKMSService', () => {
       const invalidEnv = {
         UCAN_KMS_PRINCIPAL_KEY: 'test-principal-key',
         UCAN_KMS_SERVICE_DID: 'did:web:test.example.com',
-        FF_DECRYPTION_ENABLED: 'true',
         FF_KMS_RATE_LIMITER_ENABLED: 'true',
         GOOGLE_KMS_PROJECT_ID: 'test-project',
         GOOGLE_KMS_LOCATION: '',
@@ -441,7 +436,6 @@ describe('GoogleKMSService', () => {
       const invalidEnv = {
         UCAN_KMS_PRINCIPAL_KEY: 'test-principal-key',
         UCAN_KMS_SERVICE_DID: 'did:web:test.example.com',
-        FF_DECRYPTION_ENABLED: 'true',
         FF_KMS_RATE_LIMITER_ENABLED: 'true',
         GOOGLE_KMS_PROJECT_ID: 'test-project',
         GOOGLE_KMS_LOCATION: 'global',
@@ -459,7 +453,6 @@ describe('GoogleKMSService', () => {
       const invalidEnv = {
         UCAN_KMS_PRINCIPAL_KEY: 'test-principal-key',
         UCAN_KMS_SERVICE_DID: 'did:web:test.example.com',
-        FF_DECRYPTION_ENABLED: 'true',
         FF_KMS_RATE_LIMITER_ENABLED: 'true',
         GOOGLE_KMS_PROJECT_ID: 'test-project',
         GOOGLE_KMS_LOCATION: 'global',
@@ -490,7 +483,6 @@ describe('GoogleKMSService', () => {
       const invalidEnv = {
         UCAN_KMS_PRINCIPAL_KEY: 'test-principal-key',
         UCAN_KMS_SERVICE_DID: 'did:web:test.example.com',
-        FF_DECRYPTION_ENABLED: 'true',
         FF_KMS_RATE_LIMITER_ENABLED: 'true',
         GOOGLE_KMS_PROJECT_ID: 'X',
         GOOGLE_KMS_LOCATION: '',

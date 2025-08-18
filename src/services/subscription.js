@@ -75,12 +75,10 @@ export class PlanSubscriptionServiceImpl {
       }
       
       const storageService = this.storachaStorage || new StorachaStorageService({
-        signer: ctx.ucanKmsSigner,
-        space,
         uploadServiceURL: new URL(this.env.UPLOAD_SERVICE_URL),
         uploadServiceDID: DID.from(this.env.UPLOAD_SERVICE_DID),
       })
-      const { plan, accountDID } = await storageService.getPlan(planGetDelegation)
+      const { plan, accountDID } = await storageService.getPlan(planGetDelegation, ctx.ucanKmsSigner)
       if (!storageService.isPaidPlan(plan.product)) {
         this.auditLog.logSecurityEvent('subscription_plan_invalid', {
           operation: 'subscription_check',

@@ -23,13 +23,6 @@ export async function handleEncryptionSetup (request, invocation, ctx, env) {
   const proofs = invocation.proofs
   
   try {
-    // Validate inputs first before logging any success
-    if (env.FF_DECRYPTION_ENABLED !== 'true') {
-      const errorMsg = 'Encryption setup is not enabled';
-      auditLog.logInvocation(request.space, EncryptionSetup.can, false, errorMsg, invocationCid, Date.now() - startTime);
-      return error(new Failure(errorMsg))
-    }
-
     if (!ctx.ucanKmsIdentity) {
       const errorMsg = 'Encryption setup not available - ucanKms identity not configured';
       auditLog.logInvocation(request.space, EncryptionSetup.can, false, errorMsg, invocationCid, Date.now() - startTime);

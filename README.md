@@ -49,7 +49,6 @@ GOOGLE_KMS_KEYRING_NAME=your-keyring-name
 GOOGLE_KMS_TOKEN=your-service-account-token
 
 # Feature Flags
-FF_DECRYPTION_ENABLED=true
 FF_KMS_RATE_LIMITER_ENABLED=true
 
 # Deployment

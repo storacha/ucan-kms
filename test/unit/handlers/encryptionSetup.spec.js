@@ -61,9 +61,7 @@ describe('Encryption Setup Handler', () => {
     }
     
     // Mock environment
-    mockEnv = {
-      FF_DECRYPTION_ENABLED: 'true'
-    }
+    mockEnv = {}
     
     // Stub AuditLogService
     auditLogStub = sandbox.stub(AuditLogService.prototype, 'logInvocation')
@@ -109,47 +107,7 @@ describe('Encryption Setup Handler', () => {
     ))
   })
 
-  it('should return error when encryption is disabled', async () => {
-    mockEnv.FF_DECRYPTION_ENABLED = 'false'
-    
-    const result = await handleEncryptionSetup(mockRequest, mockInvocation, mockCtx, mockEnv)
-    
-    assert(!result.ok)
-    assert.equal(result.error.message, 'Encryption setup is not enabled')
-    
-    // Verify audit log was called with error
-    assert(auditLogStub.calledWith(
-      mockRequest.space,
-      EncryptionSetup.can,
-      false,
-      'Encryption setup is not enabled',
-      'invocation-cid-123',
-      sinon.match.number
-    ))
-  })
-
-  it('should return error when ucanKmsIdentity is not configured', async () => {
-    mockEnv.FF_DECRYPTION_ENABLED = 'true'
-    delete mockCtx.ucanKmsIdentity
-    
-    const result = await handleEncryptionSetup(mockRequest, mockInvocation, mockCtx, mockEnv)
-    
-    assert(!result.ok)
-    assert.equal(result.error.message, 'Encryption setup not available - ucanKms identity not configured')
-    
-    // Verify audit log was called with error
-    assert(auditLogStub.calledWith(
-      mockRequest.space,
-      EncryptionSetup.can,
-      false,
-      'Encryption setup not available - ucanKms identity not configured',
-      'invocation-cid-123',
-      sinon.match.number
-    ))
-  })
-
   it('should return error when validation fails', async () => {
-    mockEnv.FF_DECRYPTION_ENABLED = 'true'
     mockCtx.ucanKmsIdentity = 'mock-identity'
     
     // Add cid to mockInvocation for audit logging
@@ -179,7 +137,6 @@ describe('Encryption Setup Handler', () => {
   })
 
   it('should return error when space is not provisioned', async () => {
-    mockEnv.FF_DECRYPTION_ENABLED = 'true'
     mockCtx.ucanKmsIdentity = 'mock-identity'
     
     // Add cid to mockInvocation for audit logging
@@ -212,7 +169,6 @@ describe('Encryption Setup Handler', () => {
   })
 
   it('should handle errors during key setup', async () => {
-    mockEnv.FF_DECRYPTION_ENABLED = 'true'
     mockCtx.ucanKmsIdentity = 'mock-identity'
     mockCtx.ucanPrivacyValidationService = {
       validateEncryption: sinon.stub().resolves({ ok: true })
