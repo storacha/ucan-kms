@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/storacha/ucan-kms/compare/v1.0.0...v1.0.1) (2025-08-18)
+
+
+### Bug Fixes
+
+* trigger release ([e322846](https://github.com/storacha/ucan-kms/commit/e322846861393f1bcecf4de84eaa02187352c8de))
+
 ## 1.0.0 (2025-08-18)
 
 
