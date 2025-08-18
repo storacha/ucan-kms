@@ -38,7 +38,7 @@ export function createService (ctx, env) {
             if (result.ok && ctx.kmsRateLimiter) {
               ctx.waitUntil(ctx.kmsRateLimiter.recordOperation(invocation, EncryptionSetup.can, capability.with))
             }
-            
+
             return result
           }
         }),

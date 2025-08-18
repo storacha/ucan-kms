@@ -126,7 +126,7 @@ export class UcanPrivacyValidationServiceImpl {
         this.auditLog.logUCANValidationFailure(spaceDID, 'decryption_audience', errorMsg)
         return error(new Failure(errorMsg))
       }
-     
+
       // Validate the clean invocation has proper authorization to decrypt content
       const authorization = await access(/** @type {any} */(decryptDelegation), {
         principal: Verifier,

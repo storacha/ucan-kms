@@ -8,7 +8,8 @@ import { Schema as UcantoSchema } from '@ucanto/core'
 import { RevocationStatusServiceImpl } from './services/revocation.js'
 import { PlanSubscriptionServiceImpl } from './services/subscription.js'
 import { UcanPrivacyValidationServiceImpl } from './services/ucanValidation.js'
-import packageJson from '../package.json' with { type: "json" }
+/* eslint-disable-next-line */
+import packageJson from '../package.json' with { type: 'json' }
 
 export default {
   /**

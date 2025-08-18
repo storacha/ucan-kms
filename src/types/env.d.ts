@@ -18,11 +18,6 @@ export interface Env {
    */
   UCAN_KMS_SERVICE_DID: string;
 
-  /**
-   * Feature flag for enabling decryption of symmetric keys using KMS asymmetric Space key.
-   */
-  FF_DECRYPTION_ENABLED: string;
-
   // Google KMS
   /**
    * Google KMS project ID

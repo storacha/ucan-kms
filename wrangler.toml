@@ -12,7 +12,6 @@ GOOGLE_KMS_PROJECT_ID = "storacha-staging"
 GOOGLE_KMS_LOCATION = "global"
 GOOGLE_KMS_KEYRING_NAME = "ucan-kms-staging-keyring"
 ENVIRONMENT = "development"
-FF_DECRYPTION_ENABLED = "true"
 FF_KMS_RATE_LIMITER_ENABLED = "true"
 UCAN_KMS_SERVICE_DID = "did:web:dev.kms.storacha.network"
 
@@ -42,7 +41,6 @@ UPLOAD_SERVICE_DID = "did:web:up.storacha.network"
 # REVOCATION_STATUS_SERVICE_URL = "https://up.web3.storage"
 
 # Production Environment-specific FEATURE FLAGS
-FF_DECRYPTION_ENABLED = "true"
 FF_KMS_RATE_LIMITER_ENABLED = "true"
 
 # Production Environment-specific KMS CONFIG
@@ -78,7 +76,6 @@ UPLOAD_SERVICE_DID = "did:web:staging.up.storacha.network"
 # REVOCATION_STATUS_SERVICE_URL = "https://up.web3.storage"
 
 # Staging Environment-specific FEATURE FLAGS
-FF_DECRYPTION_ENABLED = "true"
 FF_KMS_RATE_LIMITER_ENABLED = "true"
 
 # Staging Environment-specific KMS CONFIG
@@ -113,7 +110,6 @@ UPLOAD_SERVICE_DID = "did:web:staging.up.storacha.network"
 # REVOCATION_STATUS_SERVICE_URL = "https://up.web3.storage"
 
 # Forbeck Environment-specific FEATURE FLAGS
-FF_DECRYPTION_ENABLED = "true"
 FF_KMS_RATE_LIMITER_ENABLED = "true"
 
 # Development Environment-specific KMS CONFIG

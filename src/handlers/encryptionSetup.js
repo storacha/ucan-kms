@@ -15,24 +15,17 @@ export async function handleEncryptionSetup (request, invocation, ctx, env) {
   const auditLog = new AuditLogService({
     serviceName: 'encryption-setup-handler',
     environment: env.ENVIRONMENT || 'unknown'
-  });
-  
+  })
+
   const startTime = Date.now()
   // Extract invocation CID for audit correlation
   const invocationCid = invocation.cid?.toString()
   const proofs = invocation.proofs
-  
-  try {
-    // Validate inputs first before logging any success
-    if (env.FF_DECRYPTION_ENABLED !== 'true') {
-      const errorMsg = 'Encryption setup is not enabled';
-      auditLog.logInvocation(request.space, EncryptionSetup.can, false, errorMsg, invocationCid, Date.now() - startTime);
-      return error(new Failure(errorMsg))
-    }
 
+  try {
     if (!ctx.ucanKmsIdentity) {
-      const errorMsg = 'Encryption setup not available - ucanKms identity not configured';
-      auditLog.logInvocation(request.space, EncryptionSetup.can, false, errorMsg, invocationCid, Date.now() - startTime);
+      const errorMsg = 'Encryption setup not available - ucanKms identity not configured'
+      auditLog.logInvocation(request.space, EncryptionSetup.can, false, errorMsg, invocationCid, Date.now() - startTime)
       return error(new Failure(errorMsg))
     }
 
@@ -53,18 +46,18 @@ export async function handleEncryptionSetup (request, invocation, ctx, env) {
 
     // Step 3: Ensure KMS service is available
     if (!ctx.kms) {
-      const errorMsg = 'KMS service not available';
-      auditLog.logInvocation(request.space, EncryptionSetup.can, false, errorMsg, invocationCid, Date.now() - startTime);
+      const errorMsg = 'KMS service not available'
+      auditLog.logInvocation(request.space, EncryptionSetup.can, false, errorMsg, invocationCid, Date.now() - startTime)
       return error(new Failure(errorMsg))
     }
 
     // Step 4: Setup KMS key
-    const kmsResult = await ctx.kms.setupKeyForSpace(request, env);
+    const kmsResult = await ctx.kms.setupKeyForSpace(request, env)
     if (kmsResult.error) {
-      console.error('[EncryptionSetup] KMS setup failed:', kmsResult.error.message);
-              // KMS service already logs detailed failure - just log handler-level failure
-        auditLog.logInvocation(request.space, EncryptionSetup.can, false, 'KMS setup failed', invocationCid, Date.now() - startTime);
-      return error(kmsResult.error);
+      console.error('[EncryptionSetup] KMS setup failed:', kmsResult.error.message)
+      // KMS service already logs detailed failure - just log handler-level failure
+      auditLog.logInvocation(request.space, EncryptionSetup.can, false, 'KMS setup failed', invocationCid, Date.now() - startTime)
+      return error(kmsResult.error)
     }
 
     // Step 5: Validate KMS result
@@ -76,13 +69,13 @@ export async function handleEncryptionSetup (request, invocation, ctx, env) {
     }
 
     // Step 5: Success - Return KMS result
-    const duration = Date.now() - startTime;
-    auditLog.logInvocation(request.space, EncryptionSetup.can, true, undefined, invocationCid, duration);
-    return ok(kmsResult.ok);
+    const duration = Date.now() - startTime
+    auditLog.logInvocation(request.space, EncryptionSetup.can, true, undefined, invocationCid, duration)
+    return ok(kmsResult.ok)
   } catch (/** @type {any} */ err) {
-    console.error('[EncryptionSetup] Error during encryption setup:', err);
-    auditLog.logInvocation(request.space, EncryptionSetup.can, false, err.message, invocationCid, Date.now() - startTime);
+    console.error('[EncryptionSetup] Error during encryption setup:', err)
+    auditLog.logInvocation(request.space, EncryptionSetup.can, false, err.message, invocationCid, Date.now() - startTime)
     // Generic error message must be returned to the client to avoid leaking information
-    return error(new Failure('Encryption setup failed'));
+    return error(new Failure('Encryption setup failed'))
   }
 }

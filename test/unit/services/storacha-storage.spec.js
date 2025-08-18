@@ -16,36 +16,41 @@ describe('StorachaStorageService', () => {
   /** @type {StorachaStorageService} */
   let service
   /** @type {any} */
-  let mockClient
+  let mockUploadServiceConnection
   /** @type {any} */
   let mockSigner
 
-  const accountDID = 'did:key:z6MkgHB5sTThaRVihKGb2onkNDQu4vDwKoXJweRCF9m28TkL'
+  const accountDID = 'did:mailto:test@example.com'
+  const uploadServiceDID = 'did:web:upload.storacha.network'
+  const uploadServiceURL = new URL('https://upload.storacha.network')
 
   beforeEach(async () => {
     sandbox = sinon.createSandbox()
-    
+
     // Create mock signer
     mockSigner = await ed25519.Signer.generate()
-    
-    // Create mock client
-    mockClient = {
-      addProof: sandbox.stub().resolves(),
-      proofs: sandbox.stub().returns(['mock-proof']),
-      agent: {
-        invokeAndExecute: sandbox.stub().resolves({
-          out: { 
-            ok: {
-              product: 'did:web:starter.storacha.network',
-              updatedAt: '2024-01-01T00:00:00Z'
-            }
+
+    // Create mock upload service connection
+    mockUploadServiceConnection = {
+      id: { did: () => uploadServiceDID },
+      execute: sandbox.stub().resolves([{
+        out: {
+          ok: {
+            product: 'did:web:starter.storacha.network',
+            updatedAt: '2024-01-01T00:00:00Z'
           }
-        })
-      }
+        }
+      }])
     }
-    
-    // Create service with mock client
-    service = new StorachaStorageService({ client: /** @type {any} */(mockClient) })
+
+    // Create service with config
+    service = new StorachaStorageService({
+      uploadServiceDID,
+      uploadServiceURL
+    })
+
+    // Mock the uploadServiceConnection
+    service.uploadServiceConnection = mockUploadServiceConnection
   })
 
   afterEach(() => {
@@ -53,19 +58,25 @@ describe('StorachaStorageService', () => {
   })
 
   describe('constructor', () => {
-    it('should create service with signer', () => {
-      const testService = new StorachaStorageService({ signer: mockSigner })
+    it('should create service with config', () => {
+      const testService = new StorachaStorageService({
+        uploadServiceDID,
+        uploadServiceURL
+      })
       expect(testService).to.be.instanceOf(StorachaStorageService)
+      expect(testService.uploadServiceConnection).to.exist
     })
 
-    it('should create service with client', () => {
-      const mockClient = /** @type {any} */({ addProof: sinon.stub() })
-      const testService = new StorachaStorageService({ client: mockClient })
+    it('should create service with empty config', () => {
+      const testService = new StorachaStorageService()
       expect(testService).to.be.instanceOf(StorachaStorageService)
+      expect(testService.uploadServiceConnection).to.exist
     })
 
-    it('should throw error when neither client nor signer provided', () => {
-      expect(() => new StorachaStorageService()).to.throw('Either client or signer must be provided')
+    it('should create service with partial config', () => {
+      const testService = new StorachaStorageService({ uploadServiceDID })
+      expect(testService).to.be.instanceOf(StorachaStorageService)
+      expect(testService.uploadServiceConnection).to.exist
     })
   })
 
@@ -79,7 +90,7 @@ describe('StorachaStorageService', () => {
         }]
       })
 
-      const result = await service.getPlan(mockDelegation)
+      const result = await service.getPlan(mockDelegation, mockSigner)
 
       expect(result).to.deep.equal({
         plan: {
@@ -88,33 +99,15 @@ describe('StorachaStorageService', () => {
         },
         accountDID
       })
-      
-      // Verify client interactions
-      sinon.assert.calledOnce(mockClient.addProof)
-      sinon.assert.calledWith(mockClient.addProof, mockDelegation)
-      sinon.assert.calledOnce(mockClient.proofs)
-      sinon.assert.calledOnce(mockClient.agent.invokeAndExecute)
+
+      // Verify uploadServiceConnection.execute was called
+      sinon.assert.calledOnce(mockUploadServiceConnection.execute)
     })
 
-    it('should throw error when plan/get invocation fails', async () => {
-      // Create service with mock client that returns an error
-      const errorMockClient = /** @type {any} */({
-        addProof: sandbox.stub().resolves(),
-        proofs: sandbox.stub().returns(['mock-proof']),
-        agent: {
-          invokeAndExecute: sandbox.stub().resolves({
-            out: { 
-              ok: false,
-              error: {
-                message: 'Invalid delegation'
-              }
-            }
-          })
-        }
-      })
-      const errorService = new StorachaStorageService({ client: errorMockClient })
+    it('should throw error when no receipt returned', async () => {
+      // Mock execute to return empty array
+      mockUploadServiceConnection.execute.resolves([])
 
-      // Create mock delegation
       const mockDelegation = /** @type {any} */({
         capabilities: [{
           can: Plan.get.can,
@@ -123,29 +116,68 @@ describe('StorachaStorageService', () => {
       })
 
       try {
-        await errorService.getPlan(mockDelegation)
+        await service.getPlan(mockDelegation, mockSigner)
+        expect.fail('Should have thrown an error')
+      } catch (error) {
+        expect(error instanceof Error ? error.message : String(error)).to.include('Plan/Get invocation failed: No receipt')
+      }
+    })
+
+    it('should throw error when no result in receipt', async () => {
+      // Mock execute to return receipt without result
+      mockUploadServiceConnection.execute.resolves([{ out: null }])
+
+      const mockDelegation = /** @type {any} */({
+        capabilities: [{
+          can: Plan.get.can,
+          with: accountDID
+        }]
+      })
+
+      try {
+        await service.getPlan(mockDelegation, mockSigner)
+        expect.fail('Should have thrown an error')
+      } catch (error) {
+        expect(error instanceof Error ? error.message : String(error)).to.include('Plan/Get invocation failed: No result')
+      }
+    })
+
+    it('should throw error when result is not ok', async () => {
+      // Mock execute to return error result
+      mockUploadServiceConnection.execute.resolves([{
+        out: {
+          ok: false,
+          error: {
+            message: 'Invalid delegation'
+          }
+        }
+      }])
+
+      const mockDelegation = /** @type {any} */({
+        capabilities: [{
+          can: Plan.get.can,
+          with: accountDID
+        }]
+      })
+
+      try {
+        await service.getPlan(mockDelegation, mockSigner)
         expect.fail('Should have thrown an error')
       } catch (error) {
         expect(error instanceof Error ? error.message : String(error)).to.include('Plan/Get invocation failed: Invalid delegation')
       }
     })
 
-    it('should throw error when plan/get invocation fails without error message', async () => {
-      // Create service with mock client that returns an error without message
-      const errorMockClient = /** @type {any} */({
-        addProof: sandbox.stub().resolves(),
-        proofs: sandbox.stub().returns(['mock-proof']),
-        agent: {
-          invokeAndExecute: sandbox.stub().resolves({
-            out: { 
-              ok: false
-            }
-          })
+    it('should throw error when plan has no product', async () => {
+      // Mock execute to return plan without product
+      mockUploadServiceConnection.execute.resolves([{
+        out: {
+          ok: {
+            updatedAt: '2024-01-01T00:00:00Z'
+          }
         }
-      })
-      const errorService = new StorachaStorageService({ client: errorMockClient })
+      }])
 
-      // Create mock delegation
       const mockDelegation = /** @type {any} */({
         capabilities: [{
           can: Plan.get.can,
@@ -154,10 +186,10 @@ describe('StorachaStorageService', () => {
       })
 
       try {
-        await errorService.getPlan(mockDelegation)
+        await service.getPlan(mockDelegation, mockSigner)
         expect.fail('Should have thrown an error')
       } catch (error) {
-        expect(error instanceof Error ? error.message : String(error)).to.include('Plan/Get invocation failed: Unknown error')
+        expect(error instanceof Error ? error.message : String(error)).to.include('Plan/Get invocation failed: No product')
       }
     })
   })

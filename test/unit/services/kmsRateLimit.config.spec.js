@@ -34,7 +34,6 @@ describe('Service Integration - KMS Rate Limiting', () => {
     }
 
     mockEnv = {
-      FF_DECRYPTION_ENABLED: 'true',
       KMS_RATE_LIMIT_KV: mockKV,
       GOOGLE_KMS_PROJECT_ID: 'test-project',
       GOOGLE_KMS_LOCATION: 'us-central1',
