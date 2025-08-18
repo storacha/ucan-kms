@@ -359,7 +359,7 @@ describe('GoogleKMSService', () => {
   })
 
   // Helper to create a test environment with all required fields
-  function createTestEnv(overrides = {}) {
+  function createTestEnv (overrides = {}) {
     return {
       UCAN_KMS_PRINCIPAL_KEY: 'test-principal-key',
       UCAN_KMS_SERVICE_DID: 'did:web:test.example.com',
@@ -391,7 +391,7 @@ describe('GoogleKMSService', () => {
         GOOGLE_KMS_KEYRING_NAME: 'test-keyring',
         GOOGLE_KMS_TOKEN: 'valid_token_1234567890',
         UPLOAD_SERVICE_DID: '',
-        UPLOAD_SERVICE_URL: '',
+        UPLOAD_SERVICE_URL: ''
       }
 
       expect(() => new GoogleKMSService(invalidEnv))
@@ -408,7 +408,7 @@ describe('GoogleKMSService', () => {
         GOOGLE_KMS_KEYRING_NAME: 'test-keyring',
         GOOGLE_KMS_TOKEN: 'valid_token_1234567890',
         UPLOAD_SERVICE_DID: '',
-        UPLOAD_SERVICE_URL: '',
+        UPLOAD_SERVICE_URL: ''
       }
 
       expect(() => new GoogleKMSService(invalidEnv))
@@ -425,7 +425,7 @@ describe('GoogleKMSService', () => {
         GOOGLE_KMS_KEYRING_NAME: 'test-keyring',
         GOOGLE_KMS_TOKEN: 'valid_token_1234567890',
         UPLOAD_SERVICE_DID: '',
-        UPLOAD_SERVICE_URL: '',
+        UPLOAD_SERVICE_URL: ''
       }
 
       expect(() => new GoogleKMSService(invalidEnv))
@@ -442,7 +442,7 @@ describe('GoogleKMSService', () => {
         GOOGLE_KMS_KEYRING_NAME: '',
         GOOGLE_KMS_TOKEN: 'valid_token_1234567890',
         UPLOAD_SERVICE_DID: '',
-        UPLOAD_SERVICE_URL: '',
+        UPLOAD_SERVICE_URL: ''
       }
 
       expect(() => new GoogleKMSService(invalidEnv))
@@ -459,7 +459,7 @@ describe('GoogleKMSService', () => {
         GOOGLE_KMS_KEYRING_NAME: 'test-keyring',
         GOOGLE_KMS_TOKEN: 'x',
         UPLOAD_SERVICE_DID: '',
-        UPLOAD_SERVICE_URL: '',
+        UPLOAD_SERVICE_URL: ''
       }
 
       expect(() => new GoogleKMSService(invalidEnv))
@@ -489,7 +489,7 @@ describe('GoogleKMSService', () => {
         GOOGLE_KMS_KEYRING_NAME: '',
         GOOGLE_KMS_TOKEN: 'x',
         UPLOAD_SERVICE_DID: '',
-        UPLOAD_SERVICE_URL: '',
+        UPLOAD_SERVICE_URL: ''
       }
 
       try {

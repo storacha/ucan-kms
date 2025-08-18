@@ -12,5 +12,7 @@ export interface SubscriptionStatusService {
     space: import("@storacha/capabilities/types").SpaceDID,
     proofs: Proof[],
     ctx: import("../api.types.js").Context,
-  ): Promise<Result<{ isProvisioned: boolean }, import("@ucanto/server").Failure>>;
+  ): Promise<
+    Result<{ isProvisioned: boolean }, import("@ucanto/server").Failure>
+  >;
 }

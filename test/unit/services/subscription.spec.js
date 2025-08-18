@@ -31,22 +31,22 @@ describe('PlanSubscriptionService', () => {
 
   beforeEach(async () => {
     sandbox = sinon.createSandbox()
-    
+
     // Create mock audit log
     mockAuditLog = sandbox.createStubInstance(AuditLogService)
-    
+
     // Create mock storacha storage service
     mockStorachaStorage = sandbox.createStubInstance(StorachaStorageService)
-    
+
     // Create mock signer
     mockSigner = await ed25519.Signer.generate()
-    
+
     // Create mock context
     mockContext = {
       ucanKmsSigner: mockSigner,
       ucanKmsIdentity: mockSigner.withDID('did:key:z6MkgHB5sTThaRVihKGb2onkNDQu4vDwKoXJweRCF9m28TkL')
     }
-    
+
     // Create service with mock dependencies
     service = new PlanSubscriptionServiceImpl({
       UPLOAD_SERVICE_DID: '',
@@ -59,7 +59,7 @@ describe('PlanSubscriptionService', () => {
       GOOGLE_KMS_KEYRING_NAME: '',
       GOOGLE_KMS_TOKEN: '',
       ENVIRONMENT: 'test'
-    },{
+    }, {
       auditLog: mockAuditLog,
       storachaStorage: mockStorachaStorage,
       environment: 'test'
@@ -89,7 +89,6 @@ describe('PlanSubscriptionService', () => {
 
     it('should use provided audit log and storage service', () => {
       const customAuditLog = new AuditLogService({ serviceName: 'custom', environment: 'test' })
-      const mockClient = /** @type {any} */({ addProof: sinon.stub() })
       const customStorageService = new StorachaStorageService()
       const customService = new PlanSubscriptionServiceImpl({
         UPLOAD_SERVICE_DID: '',
@@ -102,7 +101,7 @@ describe('PlanSubscriptionService', () => {
         GOOGLE_KMS_KEYRING_NAME: '',
         GOOGLE_KMS_TOKEN: '',
         ENVIRONMENT: 'test'
-      },{
+      }, {
         auditLog: customAuditLog,
         storachaStorage: customStorageService
       })
@@ -206,7 +205,7 @@ describe('PlanSubscriptionService', () => {
 
     it('should return error when plan is not a paid plan', async () => {
       // Mock StorachaStorageService to return a free plan
-      const planInfo = { 
+      const planInfo = {
         plan: { product: 'did:web:free.web3.storage' },
         accountDID
       }
@@ -243,7 +242,7 @@ describe('PlanSubscriptionService', () => {
 
     it('should return success when valid paid plan delegation is provided', async () => {
       // Mock StorachaStorageService to return a paid plan
-      const planInfo = { 
+      const planInfo = {
         plan: { product: 'did:web:lite.web3.storage' },
         accountDID
       }
@@ -280,7 +279,7 @@ describe('PlanSubscriptionService', () => {
 
     it('should handle business plan as valid paid plan', async () => {
       // Mock StorachaStorageService to return a business plan
-      const planInfo = { 
+      const planInfo = {
         plan: { product: 'did:web:business.web3.storage' },
         accountDID
       }
@@ -330,7 +329,7 @@ describe('PlanSubscriptionService', () => {
 
     it('should handle multiple proofs and find the correct plan/get delegation', async () => {
       // Mock StorachaStorageService to return a paid plan
-      const planInfo = { 
+      const planInfo = {
         plan: { product: 'did:web:lite.web3.storage' },
         accountDID
       }

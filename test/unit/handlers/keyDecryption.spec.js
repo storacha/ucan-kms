@@ -29,19 +29,19 @@ describe('Key Decryption Handler', () => {
 
   beforeEach(() => {
     sandbox = sinon.createSandbox()
-    
+
     // Mock request
     mockRequest = {
       space: 'did:key:test123',
       encryptedSymmetricKey: 'encrypted-key-data'
     }
-    
+
     // Mock invocation
     mockInvocation = {
       cid: { toString: () => 'invocation-cid-123' },
       proofs: ['proof1', 'proof2']
     }
-    
+
     // Mock context
     mockCtx = {
       ucanKmsIdentity: { did: () => 'did:key:kms' },
@@ -62,25 +62,25 @@ describe('Key Decryption Handler', () => {
         })
       }
     }
-    
+
     // Mock environment
     mockEnv = {}
-    
+
     // Stub AuditLogService
     auditLogStub = sandbox.stub(AuditLogService.prototype, 'logInvocation')
-    
+
     // Stub validation methods
     validateDecryptionStub = sandbox.stub(mockCtx.ucanPrivacyValidationService, 'validateDecryption')
       .resolves({ ok: true })
-    
+
     // Stub subscription service
     isProvisionedStub = sandbox.stub(mockCtx.subscriptionStatusService, 'isProvisioned')
       .resolves({ ok: { isProvisioned: true } })
-    
+
     // Stub revocation status check
     checkStatusStub = sandbox.stub(mockCtx.revocationStatusService, 'checkStatus')
       .resolves({ ok: true })
-    
+
     // Stub KMS decrypt
     decryptStub = sandbox.stub(mockCtx.kms, 'decryptSymmetricKey')
       .resolves({
@@ -96,10 +96,10 @@ describe('Key Decryption Handler', () => {
 
   it('should handle key decryption successfully', async () => {
     const result = await handleKeyDecryption(mockRequest, mockInvocation, mockCtx, mockEnv)
-    
+
     assert.ok(result.ok)
     assert.equal(result.ok.decryptedSymmetricKey, 'decrypted-key-data')
-    
+
     // Verify audit log was called with success
     assert(auditLogStub.calledWith(
       mockRequest.space,
@@ -113,12 +113,12 @@ describe('Key Decryption Handler', () => {
 
   it('should return error when ucanKmsIdentity is not configured', async () => {
     mockCtx.ucanKmsIdentity = null
-    
+
     const result = await handleKeyDecryption(mockRequest, mockInvocation, mockCtx, mockEnv)
-    
+
     assert(!result.ok)
     assert.equal(result.error?.message, 'Encryption not available - ucanKms identity not configured')
-    
+
     // Verify audit log was called with error
     assert(auditLogStub.calledWith(
       mockRequest.space,
@@ -132,12 +132,12 @@ describe('Key Decryption Handler', () => {
 
   it('should return error when encryptedSymmetricKey is missing', async () => {
     delete mockRequest.encryptedSymmetricKey
-    
+
     const result = await handleKeyDecryption(mockRequest, mockInvocation, mockCtx, mockEnv)
-    
+
     assert(!result.ok)
     assert.equal(result.error?.message, 'Missing encryptedSymmetricKey in invocation')
-    
+
     // Verify audit log was called with error
     assert(auditLogStub.calledWith(
       mockRequest.space,
@@ -152,12 +152,12 @@ describe('Key Decryption Handler', () => {
   it('should return error when UCAN validation fails', async () => {
     const validationError = new Error('UCAN validation failed')
     validateDecryptionStub.resolves({ error: validationError })
-    
+
     const result = await handleKeyDecryption(mockRequest, mockInvocation, mockCtx, mockEnv)
-    
+
     assert(!result.ok)
     assert.equal(result.error?.message, 'UCAN validation failed')
-    
+
     // Verify audit log was called with error
     assert(auditLogStub.calledWith(
       mockRequest.space,
@@ -172,12 +172,12 @@ describe('Key Decryption Handler', () => {
   it('should return error when subscription validation fails', async () => {
     const subscriptionError = new Error('Subscription validation failed')
     isProvisionedStub.resolves({ error: subscriptionError })
-    
+
     const result = await handleKeyDecryption(mockRequest, mockInvocation, mockCtx, mockEnv)
-    
+
     assert(!result.ok)
     assert.equal(result.error?.message, 'Subscription validation failed')
-    
+
     // Verify audit log was called with error
     assert(auditLogStub.calledWith(
       mockRequest.space,
@@ -192,12 +192,12 @@ describe('Key Decryption Handler', () => {
   it('should return error when UCAN is revoked', async () => {
     const revocationError = new Error('UCAN has been revoked')
     checkStatusStub.resolves({ error: revocationError })
-    
+
     const result = await handleKeyDecryption(mockRequest, mockInvocation, mockCtx, mockEnv)
-    
+
     assert(!result.ok)
     assert.equal(result.error?.message, 'UCAN has been revoked')
-    
+
     // Verify audit log was called with error
     assert(auditLogStub.calledWith(
       mockRequest.space,
@@ -212,12 +212,12 @@ describe('Key Decryption Handler', () => {
   it('should handle errors during decryption', async () => {
     const decryptionError = new Error('Failed to decrypt key')
     decryptStub.resolves({ error: decryptionError })
-    
+
     const result = await handleKeyDecryption(mockRequest, mockInvocation, mockCtx, mockEnv)
-    
+
     assert(!result.ok)
     assert.equal(result.error?.message, 'Failed to decrypt key')
-    
+
     // Verify audit log was called with error
     assert(auditLogStub.calledWith(
       mockRequest.space,

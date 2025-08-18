@@ -26,15 +26,15 @@ describe('StorachaStorageService', () => {
 
   beforeEach(async () => {
     sandbox = sinon.createSandbox()
-    
+
     // Create mock signer
     mockSigner = await ed25519.Signer.generate()
-    
+
     // Create mock upload service connection
     mockUploadServiceConnection = {
       id: { did: () => uploadServiceDID },
       execute: sandbox.stub().resolves([{
-        out: { 
+        out: {
           ok: {
             product: 'did:web:starter.storacha.network',
             updatedAt: '2024-01-01T00:00:00Z'
@@ -42,13 +42,13 @@ describe('StorachaStorageService', () => {
         }
       }])
     }
-    
+
     // Create service with config
-    service = new StorachaStorageService({ 
+    service = new StorachaStorageService({
       uploadServiceDID,
       uploadServiceURL
     })
-    
+
     // Mock the uploadServiceConnection
     service.uploadServiceConnection = mockUploadServiceConnection
   })
@@ -59,7 +59,7 @@ describe('StorachaStorageService', () => {
 
   describe('constructor', () => {
     it('should create service with config', () => {
-      const testService = new StorachaStorageService({ 
+      const testService = new StorachaStorageService({
         uploadServiceDID,
         uploadServiceURL
       })
@@ -99,7 +99,7 @@ describe('StorachaStorageService', () => {
         },
         accountDID
       })
-      
+
       // Verify uploadServiceConnection.execute was called
       sinon.assert.calledOnce(mockUploadServiceConnection.execute)
     })
@@ -107,7 +107,7 @@ describe('StorachaStorageService', () => {
     it('should throw error when no receipt returned', async () => {
       // Mock execute to return empty array
       mockUploadServiceConnection.execute.resolves([])
-      
+
       const mockDelegation = /** @type {any} */({
         capabilities: [{
           can: Plan.get.can,
@@ -126,7 +126,7 @@ describe('StorachaStorageService', () => {
     it('should throw error when no result in receipt', async () => {
       // Mock execute to return receipt without result
       mockUploadServiceConnection.execute.resolves([{ out: null }])
-      
+
       const mockDelegation = /** @type {any} */({
         capabilities: [{
           can: Plan.get.can,
@@ -145,14 +145,14 @@ describe('StorachaStorageService', () => {
     it('should throw error when result is not ok', async () => {
       // Mock execute to return error result
       mockUploadServiceConnection.execute.resolves([{
-        out: { 
+        out: {
           ok: false,
           error: {
             message: 'Invalid delegation'
           }
         }
       }])
-      
+
       const mockDelegation = /** @type {any} */({
         capabilities: [{
           can: Plan.get.can,
@@ -171,13 +171,13 @@ describe('StorachaStorageService', () => {
     it('should throw error when plan has no product', async () => {
       // Mock execute to return plan without product
       mockUploadServiceConnection.execute.resolves([{
-        out: { 
+        out: {
           ok: {
             updatedAt: '2024-01-01T00:00:00Z'
           }
         }
       }])
-      
+
       const mockDelegation = /** @type {any} */({
         capabilities: [{
           can: Plan.get.can,

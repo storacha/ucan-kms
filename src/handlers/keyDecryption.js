@@ -15,7 +15,7 @@ export async function handleKeyDecryption (request, invocation, ctx, env) {
   const auditLog = new AuditLogService({
     serviceName: 'key-decryption-handler',
     environment: env.ENVIRONMENT || 'unknown'
-  });
+  })
   const startTime = Date.now()
   // Extract invocation CID for audit correlation
   const invocationCid = invocation.cid?.toString()

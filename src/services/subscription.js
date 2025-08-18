@@ -13,7 +13,6 @@ import { DID } from '@ucanto/validator'
  * @implements {SubscriptionStatusService}
  */
 export class PlanSubscriptionServiceImpl {
-  
   /**
    * Creates a new subscription service
    * @param {import('../types/env.d.ts').Env} env - Environment configuration
@@ -57,10 +56,10 @@ export class PlanSubscriptionServiceImpl {
         })
         return error(new Failure('No Plan/Get Delegation proofs provided'))
       }
-      
+
       const planGetDelegation = proofs
-      .map(p => /** @type {import('@ucanto/interface').Delegation} */(p))
-      .find(d => d.capabilities.some(cap => cap.can === Plan.get.can))
+        .map(p => /** @type {import('@ucanto/interface').Delegation} */(p))
+        .find(d => d.capabilities.some(cap => cap.can === Plan.get.can))
       if (!planGetDelegation) {
         this.auditLog.logSecurityEvent('subscription_plan_delegation_missing', {
           operation: 'subscription_check',
@@ -73,10 +72,10 @@ export class PlanSubscriptionServiceImpl {
         })
         return error(new Failure('No Plan/Get Delegation proofs found'))
       }
-      
+
       const storageService = this.storachaStorage || new StorachaStorageService({
         uploadServiceURL: new URL(this.env.UPLOAD_SERVICE_URL),
-        uploadServiceDID: DID.from(this.env.UPLOAD_SERVICE_DID),
+        uploadServiceDID: DID.from(this.env.UPLOAD_SERVICE_DID)
       })
       const { plan, accountDID } = await storageService.getPlan(planGetDelegation, ctx.ucanKmsSigner)
       if (!storageService.isPaidPlan(plan.product)) {
@@ -93,7 +92,7 @@ export class PlanSubscriptionServiceImpl {
         })
         return error(new Failure('User is not subscribed to a paid plan'))
       }
-      
+
       this.auditLog.logSecurityEvent('subscription_plan_validated', {
         operation: 'subscription_check',
         status: 'success',
@@ -112,7 +111,7 @@ export class PlanSubscriptionServiceImpl {
       this.auditLog.logSecurityEvent('subscription_plan_service_failure', {
         operation: 'subscription_check',
         status: 'failure',
-        error: err instanceof Error ? err.message : String(err) 
+        error: err instanceof Error ? err.message : String(err)
       })
       // Generic error message must be returned to the client to avoid leaking information
       return error(new Failure('Subscription validation failed'))

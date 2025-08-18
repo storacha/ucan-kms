@@ -196,7 +196,6 @@ describe('UcanPrivacyValidationService', () => {
       expect(result.ok).to.exist
       expect(result.ok).to.be.true
     })
-
   })
 
   describe('validateDecryption', () => {

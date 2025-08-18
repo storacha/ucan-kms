@@ -43,5 +43,7 @@ export interface KMSService {
   decryptSymmetricKey(
     request: DecryptionKeyRequest,
     env: Env,
-  ): Promise<Result<{ decryptedKey: string }, import("@ucanto/server").Failure>>;
+  ): Promise<
+    Result<{ decryptedKey: string }, import("@ucanto/server").Failure>
+  >;
 }

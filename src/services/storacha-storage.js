@@ -11,22 +11,22 @@ export class StorachaStorageService {
    * @param {URL} [config.uploadServiceURL] - Upload service URL
    * @param {import('@ucanto/interface').DID} [config.uploadServiceDID] - Upload service DID
    */
-  constructor(config = {}) {
+  constructor (config = {}) {
     this.uploadServiceConnection = uploadServiceConnection({
       id: { did: () => /** @type {import('@ucanto/interface').DID} */(config.uploadServiceDID) },
-      url: config.uploadServiceURL,
+      url: config.uploadServiceURL
     })
   }
 
   /**
    * Gets plan information for an account using a plan/get delegation
-   * 
+   *
    * @param {import('@ucanto/interface').Delegation} planGetDelegation - The plan/get delegation proof
    * @param {import('@ucanto/interface').Signer<`did:key:${string}`, any>} ucanKmsSigner - The signer to use for the invocation
    * @returns {Promise<{ plan: { product: string }, accountDID: string }>} The plan information and account DID
    * @throws {Error} If the plan/get invocation fails
    */
-  async getPlan(planGetDelegation, ucanKmsSigner) {
+  async getPlan (planGetDelegation, ucanKmsSigner) {
     const [capability] = planGetDelegation.capabilities
     const accountDID = capability.with
     const invocation = Plan.get.invoke({
@@ -59,16 +59,16 @@ export class StorachaStorageService {
 
   /**
    * Validates if a plan product is a paid plan
-   * 
+   *
    * @param {string} planProduct - The plan product identifier
    * @returns {boolean} True if the plan is a paid plan
    */
-  isPaidPlan(planProduct) {
+  isPaidPlan (planProduct) {
     const PAID_PLANS = [
       'did:web:lite.web3.storage',
-      'did:web:business.web3.storage',
+      'did:web:business.web3.storage'
     ]
-    
+
     return PAID_PLANS.includes(planProduct)
   }
 }

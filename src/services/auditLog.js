@@ -370,7 +370,7 @@ export class AuditLogService {
   }
 
   /**
-   * Log revocation service events  
+   * Log revocation service events
    * @param {string} eventType - Type of revocation event
    * @param {SpaceDID} [space] - Space DID
    * @param {string} [status] - Operation status

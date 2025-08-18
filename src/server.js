@@ -2,7 +2,6 @@ import * as Server from '@ucanto/server'
 import * as CAR from '@ucanto/transport/car'
 import { DIDResolutionError } from '@ucanto/validator'
 
-
 /**
  * @type {Record<`did:${string}:${string}`, `did:key:${string}`>}
  */
@@ -17,7 +16,7 @@ export const knownWebDIDs = {
   'did:web:staging.up.storacha.network': 'did:key:z6MkhcbEpJpEvNVDd3n5RurquVdqs5dPU16JDU5VZTDtFgnn',
   'did:web:staging.web3.storage': 'did:key:z6MkhcbEpJpEvNVDd3n5RurquVdqs5dPU16JDU5VZTDtFgnn', // legacy
   'did:web:staging.w3s.link': 'did:key:z6MkqK1d4thaCEXSGZ6EchJw3tDPhQriwynWDuR55ayATMNf',
-  'did:web:staging.kms.storacha.network': 'did:key:z6MkmRf149D6oc9wq9ioXCsT5fgTn6esd7JjB9S5JnM4Y9qj',
+  'did:web:staging.kms.storacha.network': 'did:key:z6MkmRf149D6oc9wq9ioXCsT5fgTn6esd7JjB9S5JnM4Y9qj'
 }
 
 /**
