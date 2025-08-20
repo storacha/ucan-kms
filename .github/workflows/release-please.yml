@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -19,6 +20,7 @@ jobs:
         with:
           # This specifies which files to bump
           release-type: node
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       # The logic below handles the case where a release is created
       - name: Checkout code
