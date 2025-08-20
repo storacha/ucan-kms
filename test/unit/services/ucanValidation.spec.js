@@ -227,7 +227,7 @@ describe('UcanPrivacyValidationService', () => {
         proofs: [contentDecryptDelegation]
       }).buildIPLDView()
 
-      const result = await service.validateDecryption(invocation, spaceDIDForTest, ucanKmsIdentity)
+      const result = await service.validateDecryption(invocation, spaceDIDForTest)
 
       expect(result.ok).to.exist
       expect(result.ok).to.be.true
@@ -259,7 +259,7 @@ describe('UcanPrivacyValidationService', () => {
         proofs: [] // No proofs
       }).buildIPLDView()
 
-      const result = await service.validateDecryption(invocation, spaceDID, ucanKmsIdentity)
+      const result = await service.validateDecryption(invocation, spaceDID)
 
       expect(result.error).to.exist
       expect(result.error?.message).to.equal('No valid ContentDecrypt delegation found in proofs!')
@@ -296,7 +296,7 @@ describe('UcanPrivacyValidationService', () => {
         proofs: [delegation1, delegation2] // Multiple proofs
       }).buildIPLDView()
 
-      const result = await service.validateDecryption(invocation, spaceDID, ucanKmsIdentity)
+      const result = await service.validateDecryption(invocation, spaceDID)
 
       expect(result.error).to.exist
       expect(result.error?.message).to.equal('No valid ContentDecrypt delegation found in proofs!')
@@ -325,7 +325,7 @@ describe('UcanPrivacyValidationService', () => {
         proofs: [wrongDelegation]
       }).buildIPLDView()
 
-      const result = await service.validateDecryption(invocation, spaceDIDForTest, ucanKmsIdentity)
+      const result = await service.validateDecryption(invocation, spaceDIDForTest)
 
       expect(result.error).to.exist
       expect(result.error?.message).to.equal('No valid ContentDecrypt delegation found in proofs!')
@@ -358,7 +358,7 @@ describe('UcanPrivacyValidationService', () => {
         proofs: [wrongSpaceDelegation]
       }).buildIPLDView()
 
-      const result = await service.validateDecryption(invocation, spaceDIDForTest, ucanKmsIdentity)
+      const result = await service.validateDecryption(invocation, spaceDIDForTest)
 
       expect(result.error).to.exist
       expect(result.error?.message).to.equal('No valid ContentDecrypt delegation found in proofs!')
@@ -391,7 +391,7 @@ describe('UcanPrivacyValidationService', () => {
         proofs: [contentDecryptDelegation]
       }).buildIPLDView()
 
-      const result = await service.validateDecryption(invocation, spaceDIDForTest, ucanKmsIdentity)
+      const result = await service.validateDecryption(invocation, spaceDIDForTest)
 
       expect(result.error).to.exist
       expect(result.error?.message).to.include('The invoker must be equal to the delegated audience!')
@@ -455,7 +455,7 @@ describe('UcanPrivacyValidationService', () => {
         proofs: [clientContentDelegation]
       }).buildIPLDView()
 
-      const result = await service.validateDecryption(invocation, spaceDIDForTest, ucanKmsIdentity)
+      const result = await service.validateDecryption(invocation, spaceDIDForTest)
 
       expect(result.ok).to.exist
       expect(result.ok).to.be.true
@@ -487,7 +487,7 @@ describe('UcanPrivacyValidationService', () => {
         proofs: [expiredContentDelegation]
       }).buildIPLDView()
 
-      const result = await service.validateDecryption(invocation, spaceDIDForTest, ucanKmsIdentity)
+      const result = await service.validateDecryption(invocation, spaceDIDForTest)
 
       // Should fail due to expired delegation
       expect(result.error).to.exist
@@ -526,7 +526,7 @@ describe('UcanPrivacyValidationService', () => {
           proofs: [contentDecryptDelegation]
         }).buildIPLDView()
 
-        const result = await service.validateDecryption(invocation, spaceDIDForTest, ucanKmsIdentity)
+        const result = await service.validateDecryption(invocation, spaceDIDForTest)
 
         expect(result.ok).to.exist
         expect(result.ok).to.be.true
@@ -596,7 +596,7 @@ describe('UcanPrivacyValidationService', () => {
             proofs: [delegation]
           }).buildIPLDView()
 
-          const result = await service.validateDecryption(invocation, spaceDIDForTest, ucanKmsIdentity)
+          const result = await service.validateDecryption(invocation, spaceDIDForTest)
 
           // For expired or invalid times, expect failure
           if (expTime <= currentTime || expTime <= 0) {

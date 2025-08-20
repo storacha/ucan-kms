@@ -35,7 +35,7 @@ export async function handleKeyDecryption (request, invocation, ctx, env) {
     }
 
     // Step 1: Validate decrypt delegation and invocation
-    const validationResult = await ctx.ucanPrivacyValidationService?.validateDecryption(invocation, request.space, ctx.ucanKmsIdentity)
+    const validationResult = await ctx.ucanPrivacyValidationService?.validateDecryption(invocation, request.space)
     if (validationResult?.error) {
       auditLog.logInvocation(request.space, EncryptionKeyDecrypt.can, false, 'UCAN validation failed', invocationCid, Date.now() - startTime)
       return error(validationResult.error)

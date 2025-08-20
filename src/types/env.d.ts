@@ -18,6 +18,11 @@ export interface Env {
    */
   UCAN_KMS_SERVICE_DID: string;
 
+  /**
+   * UCAN Validator proof (optional - used if provided)
+   */
+  UCAN_VALIDATOR_PROOF?: string;
+
   // Google KMS
   /**
    * Google KMS project ID

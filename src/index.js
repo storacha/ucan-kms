@@ -64,7 +64,7 @@ export default {
 
       // Create service handler and ucan server
       const service = ctx.service ?? createService(ctx, env)
-      const server = ctx.server ?? createServer(ctx, service)
+      const server = ctx.server ?? await createServer(ctx, service, env)
 
       const { body, headers } = await server.request({
         body: new Uint8Array(await request.arrayBuffer()),
