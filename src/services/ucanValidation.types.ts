@@ -23,12 +23,10 @@ export interface UcanPrivacyValidationService {
    *
    * @param invocation - The UCAN invocation to validate
    * @param spaceDID - The space DID that should match the invocation
-   * @param ucanKmsIdentity - The ucanKms identity for authorization
    * @returns Promise with the validation result
    */
   validateDecryption(
     invocation: import("@ucanto/interface").Invocation,
     spaceDID: import("@storacha/capabilities/types").SpaceDID,
-    ucanKmsIdentity: import("@ucanto/interface").Verifier,
   ): Promise<Result<boolean, import("@ucanto/server").Failure>>;
 }

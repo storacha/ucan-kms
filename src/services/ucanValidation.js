@@ -3,6 +3,7 @@ import { error, ok, Failure } from '@ucanto/server'
 import { Verifier } from '@ucanto/principal'
 import { EncryptionSetup, EncryptionKeyDecrypt, decrypt as ContentDecrypt } from '@storacha/capabilities/space'
 import { AuditLogService } from './auditLog.js'
+import { resolveDIDKey } from '../server.js'
 
 /**
  * @import { UcanPrivacyValidationService } from './ucanValidation.types.js'
@@ -81,10 +82,9 @@ export class UcanPrivacyValidationServiceImpl {
    *
    * @param {import('@ucanto/interface').Invocation} invocation
    * @param {import('@storacha/capabilities/types').SpaceDID} spaceDID
-   * @param {import('@ucanto/interface').Verifier} ucanKmsIdentity
    * @returns {Promise<import('@ucanto/server').Result<boolean, import('@ucanto/server').Failure>>}
    */
-  async validateDecryption (invocation, spaceDID, ucanKmsIdentity) {
+  async validateDecryption (invocation, spaceDID) {
     try {
       // Check invocation has the key decrypt capability
       const decryptKeyCapability = invocation.capabilities.find(
@@ -132,7 +132,8 @@ export class UcanPrivacyValidationServiceImpl {
         principal: Verifier,
         capability: ContentDecrypt,
         authority: Authority,
-        validateAuthorization: () => ok({})
+        validateAuthorization: () => ok({}),
+        resolveDIDKey
       })
 
       if (authorization.error) {
