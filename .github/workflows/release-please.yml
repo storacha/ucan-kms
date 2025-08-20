@@ -26,6 +26,7 @@ jobs:
           release-type: node
           # Ensures tags like v1.2.3 (not ucan-kms-v1.2.3)
           include-component-in-tag: false
+          monorepo-tags: false
 
       # The logic below handles the case where a release is created
       - name: Checkout code
