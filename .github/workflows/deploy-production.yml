@@ -3,6 +3,9 @@ name: Deploy to Production
 on:
   release:
     types: [published]
+  push:
+    tags:
+      - 'v*'
   workflow_dispatch:
 
 jobs:
@@ -17,7 +20,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '23'
+          node-version: '22' # LTS
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4

@@ -11,6 +11,10 @@ permissions:
   pull-requests: write
   issues: write
 
+concurrency:
+  group: release-please-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   release-please:
     runs-on: ubuntu-latest
@@ -20,7 +24,8 @@ jobs:
         with:
           # This specifies which files to bump
           release-type: node
-          token: ${{ secrets.GITHUB_TOKEN }}
+          # Ensures tags like v1.2.3 (not ucan-kms-v1.2.3)
+          include-component-in-tag: false
 
       # The logic below handles the case where a release is created
       - name: Checkout code
@@ -31,7 +36,7 @@ jobs:
         if: ${{ steps.release.outputs.release_created }}
         uses: actions/setup-node@v4
         with:
-          node-version: '23'
+          node-version: '22' # LTS
 
       - name: Setup pnpm
         if: ${{ steps.release.outputs.release_created }}

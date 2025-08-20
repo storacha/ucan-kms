@@ -159,4 +159,3 @@ This project is dual-licensed under:
 - MIT License
 
 See [LICENSE-APACHE](LICENSE-APACHE) and [LICENSE-MIT](LICENSE-MIT) for more details.
-
