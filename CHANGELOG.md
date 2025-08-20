@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.2](https://github.com/storacha/ucan-kms/compare/v1.0.1...v1.0.2) (2025-08-20)
+
+
+### Bug Fixes
+
+* plan/get invocation ([#10](https://github.com/storacha/ucan-kms/issues/10)) ([57a4507](https://github.com/storacha/ucan-kms/commit/57a450774d4bdc53bf14856bf8536d64840d4794))
+
 ## [1.0.1](https://github.com/storacha/ucan-kms/compare/v1.0.0...v1.0.1) (2025-08-18)
 
 
