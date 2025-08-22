@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.0.3](https://github.com/storacha/ucan-kms/compare/v1.0.2...v1.0.3) (2025-08-22)
+
+
+### Bug Fixes
+
+* ci ([a3e76a4](https://github.com/storacha/ucan-kms/commit/a3e76a411c513343d55a76173464fdf325249606))
+* decryption delegation validation ([#12](https://github.com/storacha/ucan-kms/issues/12)) ([31a20bf](https://github.com/storacha/ucan-kms/commit/31a20bf5046969f6920bc48137caa700aa9c6564))
+* fix prod workflow ([a999c83](https://github.com/storacha/ucan-kms/commit/a999c834f50ca515b22690d5f3f878ffa0fb70c7))
+* plan/get invocation ([#10](https://github.com/storacha/ucan-kms/issues/10)) ([57a4507](https://github.com/storacha/ucan-kms/commit/57a450774d4bdc53bf14856bf8536d64840d4794))
+* release-please in single repo mode ([335a7d4](https://github.com/storacha/ucan-kms/commit/335a7d420467fa61f7c148b2aa874e9104a561e1))
+
 ## [1.0.2](https://github.com/storacha/ucan-kms/compare/v1.0.1...v1.0.2) (2025-08-20)
 
 
