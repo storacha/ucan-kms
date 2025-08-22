@@ -1,6 +1,6 @@
 {
   "name": "ucan-kms",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "UCAN-based Key Management Service",
   "type": "module",
   "exports": {
