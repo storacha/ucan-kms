@@ -21,8 +21,8 @@ importers:
         specifier: 1.8.0
         version: 1.8.0
       '@storacha/client':
-        specifier: ^1.7.6
-        version: 1.7.6(encoding@0.1.13)
+        specifier: 1.7.9
+        version: 1.7.9(encoding@0.1.13)
       '@ucanto/client':
         specifier: 9.0.1
         version: 9.0.1
@@ -42,8 +42,8 @@ importers:
         specifier: 9.2.0
         version: 9.2.0
       '@ucanto/validator':
-        specifier: 9.0.3
-        version: 9.0.3
+        specifier: 9.1.0
+        version: 9.1.0
       crc-32:
         specifier: ^1.2.2
         version: 1.2.2
@@ -822,8 +822,8 @@ packages:
   '@storacha/capabilities@1.8.0':
     resolution: {integrity: sha512-39G/oFqmdmyRDG3GCG1TFkna0jWRPSvT0TPtAgQ0d7LVL0fVwo3Ryu7clnoa6PcdcC8VmsuHN/YC0IvhEdYKug==}
 
-  '@storacha/client@1.7.6':
-    resolution: {integrity: sha512-KK5Js2C6dwG/Jn7hD9dkoSUPKzXnhVbuiZRW8eaj1zbLBdqQlkGMa924ivcaPWi0fHHiV+jH4y+fmG14d2kwiw==}
+  '@storacha/client@1.7.9':
+    resolution: {integrity: sha512-gghWhV+rfB/M2uTA+ywaxBGYCnUkNUcUCB1Yh02cmbuu/GcaPA6Mj3/zAr9ZWr8BMGrlMKj3qbMMOQ42LF//DQ==}
     engines: {node: '>=18'}
 
   '@storacha/did-mailto@1.0.2':
@@ -966,9 +966,6 @@ packages:
 
   '@ucanto/transport@9.2.0':
     resolution: {integrity: sha512-w/CtD5LYEpGo/CxV78IiWalW99gNRPHKZ/DoOpart5QShozvnU//PwUqyqnGimZCDIrIq4LH6x92z2L/2k5OKQ==}
-
-  '@ucanto/validator@9.0.3':
-    resolution: {integrity: sha512-S3NJ2fDhdnPuepAW7OVN/ngZ9DGqhibdwnFbs7lRyCNMgVrU90eqrQLa+8FmIhjlsWeQQvc77SUVygso2eqY4A==}
 
   '@ucanto/validator@9.1.0':
     resolution: {integrity: sha512-2JnEEZYc8kTZz+qbyL7LbI/TSpBRWLOchNhaRB5DTyj38FxMFQUXIB7gQ5lZHv49uYJGx/FXKPw0268WgJdEvg==}
@@ -3348,7 +3345,7 @@ snapshots:
       '@web3-storage/data-segment': 5.3.0
       multiformats: 13.3.7
 
-  '@storacha/client@1.7.6(encoding@0.1.13)':
+  '@storacha/client@1.7.9(encoding@0.1.13)':
     dependencies:
       '@ipld/dag-ucan': 3.4.5
       '@storacha/access': 1.6.0
@@ -3572,14 +3569,6 @@ snapshots:
     dependencies:
       '@ucanto/core': 10.4.0
       '@ucanto/interface': 10.3.0
-
-  '@ucanto/validator@9.0.3':
-    dependencies:
-      '@ipld/car': 5.4.2
-      '@ipld/dag-cbor': 9.2.4
-      '@ucanto/core': 10.4.0
-      '@ucanto/interface': 10.3.0
-      multiformats: 13.3.7
 
   '@ucanto/validator@9.1.0':
     dependencies:

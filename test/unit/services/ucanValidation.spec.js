@@ -32,15 +32,19 @@ describe('UcanPrivacyValidationService', () => {
   let spaceDID
   /** @type {import('@ucanto/interface').Link} */
   let resourceCID
+  /** @type {any} */
+  let env
 
   beforeEach(async () => {
     sandbox = sinon.createSandbox()
     service = new UcanPrivacyValidationServiceImpl()
 
     // Setup identities
+    /** @type {import('@ucanto/principal/ed25519').Signer} */
     ucanKmsSigner = await ed25519.Signer.generate()
     ucanKmsIdentity = ucanKmsSigner.withDID('did:web:test.w3s.link')
 
+    /** @type {import('@ucanto/principal/ed25519').Signer} */
     clientSigner = await ed25519.Signer.generate()
     clientIdentity = clientSigner
 
@@ -48,6 +52,12 @@ describe('UcanPrivacyValidationService', () => {
     spaceOwnerIdentity = spaceOwnerSigner
     spaceDID = spaceOwnerIdentity.did()
     resourceCID = Link.parse('bafybeicfjzjsl72ntzvne5apc4mubhtvsb7pd2qgvtqhuzbjznm7bxkuzy')
+    env = {
+      UCAN_KMS_IDENTITY: ucanKmsIdentity.did(),
+      UCAN_KMS_PRIVATE_KEY: ucanKmsSigner.secret,
+      UCAN_KMS_AUDIT_LOG: 'test',
+      UCAN_KMS_ENVIRONMENT: 'test'
+    }
   })
 
   afterEach(() => {
@@ -227,7 +237,8 @@ describe('UcanPrivacyValidationService', () => {
         proofs: [contentDecryptDelegation]
       }).buildIPLDView()
 
-      const result = await service.validateDecryption(invocation, spaceDIDForTest)
+      // @ts-ignore - there is no need to declare the entire context object
+      const result = await service.validateDecryption(invocation, spaceDIDForTest, { ucanKmsIdentity }, env)
 
       expect(result.ok).to.exist
       expect(result.ok).to.be.true
@@ -242,10 +253,10 @@ describe('UcanPrivacyValidationService', () => {
       }
 
       // @ts-ignore - Testing error handling with incomplete invocation object
-      const result = await service.validateDecryption(invocation, spaceDID, ucanKmsIdentity)
+      const result = await service.validateDecryption(invocation, spaceDID, { ucanKmsIdentity }, env)
 
       expect(result.error).to.exist
-      expect(result.error?.message).to.include('Invocation does not contain space/encryption/key/decrypt capability!')
+      expect(result.error?.message).to.include('No valid space/content/decrypt delegation found in proofs!')
     })
 
     it('should return error when no delegation proofs are provided', async () => {
@@ -259,10 +270,11 @@ describe('UcanPrivacyValidationService', () => {
         proofs: [] // No proofs
       }).buildIPLDView()
 
-      const result = await service.validateDecryption(invocation, spaceDID)
+      // @ts-ignore - there is no need to declare the entire context object
+      const result = await service.validateDecryption(invocation, spaceDID, { ucanKmsIdentity }, env)
 
       expect(result.error).to.exist
-      expect(result.error?.message).to.equal('No valid ContentDecrypt delegation found in proofs!')
+      expect(result.error?.message).to.equal('No valid space/content/decrypt delegation found in proofs!')
     })
 
     it('should return error when multiple delegation proofs are provided', async () => {
@@ -296,10 +308,11 @@ describe('UcanPrivacyValidationService', () => {
         proofs: [delegation1, delegation2] // Multiple proofs
       }).buildIPLDView()
 
-      const result = await service.validateDecryption(invocation, spaceDID)
+      // @ts-ignore - there is no need to declare the entire context object
+      const result = await service.validateDecryption(invocation, spaceDID, { ucanKmsIdentity }, env)
 
       expect(result.error).to.exist
-      expect(result.error?.message).to.equal('No valid ContentDecrypt delegation found in proofs!')
+      expect(result.error?.message).to.equal('No valid space/content/decrypt delegation found in proofs!')
     })
 
     it('should return error when delegation lacks content decrypt capability', async () => {
@@ -325,10 +338,11 @@ describe('UcanPrivacyValidationService', () => {
         proofs: [wrongDelegation]
       }).buildIPLDView()
 
-      const result = await service.validateDecryption(invocation, spaceDIDForTest)
+      // @ts-ignore - there is no need to declare the entire context object
+      const result = await service.validateDecryption(invocation, spaceDIDForTest, { ucanKmsIdentity }, env)
 
       expect(result.error).to.exist
-      expect(result.error?.message).to.equal('No valid ContentDecrypt delegation found in proofs!')
+      expect(result.error?.message).to.equal('No valid space/content/decrypt delegation found in proofs!')
     })
 
     it('should return error when delegation is for wrong space', async () => {
@@ -358,10 +372,11 @@ describe('UcanPrivacyValidationService', () => {
         proofs: [wrongSpaceDelegation]
       }).buildIPLDView()
 
-      const result = await service.validateDecryption(invocation, spaceDIDForTest)
+      // @ts-ignore - there is no need to declare the entire context object
+      const result = await service.validateDecryption(invocation, spaceDIDForTest, { ucanKmsIdentity }, env)
 
       expect(result.error).to.exist
-      expect(result.error?.message).to.equal('No valid ContentDecrypt delegation found in proofs!')
+      expect(result.error?.message).to.equal('No valid space/content/decrypt delegation found in proofs!')
     })
 
     it('should return error when invocation issuer does not match delegation audience', async () => {
@@ -391,7 +406,8 @@ describe('UcanPrivacyValidationService', () => {
         proofs: [contentDecryptDelegation]
       }).buildIPLDView()
 
-      const result = await service.validateDecryption(invocation, spaceDIDForTest)
+      // @ts-ignore - there is no need to declare the entire context object
+      const result = await service.validateDecryption(invocation, spaceDIDForTest, { ucanKmsIdentity }, env)
 
       expect(result.error).to.exist
       expect(result.error?.message).to.include('The invoker must be equal to the delegated audience!')
@@ -410,10 +426,10 @@ describe('UcanPrivacyValidationService', () => {
       }
 
       // @ts-ignore - Testing error handling with incomplete invocation object
-      const result = await service.validateDecryption(invocation, spaceDIDForTest, ucanKmsIdentity)
+      const result = await service.validateDecryption(invocation, spaceDIDForTest, { ucanKmsIdentity }, env)
 
       expect(result.error).to.exist
-      expect(result.error?.message).to.include('Invalid "with" in the invocation. Decryption is allowed only for files associated with spaceDID')
+      expect(result.error?.message).to.include('No valid space/content/decrypt delegation found in proofs!')
     })
 
     it('should handle complex multi-level delegation chains for decryption', async () => {
@@ -455,7 +471,8 @@ describe('UcanPrivacyValidationService', () => {
         proofs: [clientContentDelegation]
       }).buildIPLDView()
 
-      const result = await service.validateDecryption(invocation, spaceDIDForTest)
+      // @ts-ignore - there is no need to declare the entire context object
+      const result = await service.validateDecryption(invocation, spaceDIDForTest, { ucanKmsIdentity }, env)
 
       expect(result.ok).to.exist
       expect(result.ok).to.be.true
@@ -487,7 +504,8 @@ describe('UcanPrivacyValidationService', () => {
         proofs: [expiredContentDelegation]
       }).buildIPLDView()
 
-      const result = await service.validateDecryption(invocation, spaceDIDForTest)
+      // @ts-ignore - there is no need to declare the entire context object
+      const result = await service.validateDecryption(invocation, spaceDIDForTest, { ucanKmsIdentity }, env)
 
       // Should fail due to expired delegation
       expect(result.error).to.exist
@@ -526,7 +544,8 @@ describe('UcanPrivacyValidationService', () => {
           proofs: [contentDecryptDelegation]
         }).buildIPLDView()
 
-        const result = await service.validateDecryption(invocation, spaceDIDForTest)
+        // @ts-ignore - there is no need to declare the entire context object
+        const result = await service.validateDecryption(invocation, spaceDIDForTest, { ucanKmsIdentity }, env)
 
         expect(result.ok).to.exist
         expect(result.ok).to.be.true
@@ -596,7 +615,8 @@ describe('UcanPrivacyValidationService', () => {
             proofs: [delegation]
           }).buildIPLDView()
 
-          const result = await service.validateDecryption(invocation, spaceDIDForTest)
+          // @ts-ignore - there is no need to declare the entire context object
+          const result = await service.validateDecryption(invocation, spaceDIDForTest, { ucanKmsIdentity }, env)
 
           // For expired or invalid times, expect failure
           if (expTime <= currentTime || expTime <= 0) {
@@ -659,7 +679,7 @@ describe('UcanPrivacyValidationService', () => {
       }
 
       // @ts-ignore - Testing with malformed input
-      const result = await service.validateDecryption(malformedInvocation, spaceDIDForTest, ucanKmsIdentity)
+      const result = await service.validateDecryption(malformedInvocation, spaceDIDForTest, { ucanKmsIdentity }, env)
 
       expect(result.error).to.exist
       expect(result.error?.message).to.be.a('string')
