@@ -23,10 +23,14 @@ export interface UcanPrivacyValidationService {
    *
    * @param invocation - The UCAN invocation to validate
    * @param spaceDID - The space DID that should match the invocation
+   * @param ctx - The context object containing the environment variables
+   * @param env - The environment variables
    * @returns Promise with the validation result
    */
   validateDecryption(
     invocation: import("@ucanto/interface").Invocation,
     spaceDID: import("@storacha/capabilities/types").SpaceDID,
+    ctx: import("../api.types.js").Context,
+    env: import("../types/env.d.ts").Env,
   ): Promise<Result<boolean, import("@ucanto/server").Failure>>;
 }

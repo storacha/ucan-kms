@@ -28,8 +28,10 @@ export const knownWebDIDs = {
  * @param {import('./types/env.js').Env} env
  */
 export async function createServer (ctx, service, env) {
+  console.log('Creating server...')
   const validatorProofs = await getValidatorProofs(env)
-  return Server.create({
+  console.log('Validator proofs loaded: ' + validatorProofs.length)
+  const server = Server.create({
     id: ctx.ucanKmsSigner.withDID(ctx.ucanKmsIdentity.did()),
     codec: CAR.inbound,
     service,
@@ -37,6 +39,8 @@ export async function createServer (ctx, service, env) {
     resolveDIDKey,
     proofs: validatorProofs
   })
+  console.log('Server created')
+  return server
 }
 
 /**
