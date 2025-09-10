@@ -179,6 +179,5 @@ describe('RevocationStatusService', () => {
         expect(result.ok).to.be.a('boolean')
       }
     })
-
   })
 })

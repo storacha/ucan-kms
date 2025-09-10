@@ -42,7 +42,7 @@ export class RevocationStatusServiceImpl {
         operation: 'revocation_check',
         status: 'success',
         metadata: {
-          proofsCount: delegations.length,
+          proofsCount: delegations.length
         }
       })
       return ok(true)
@@ -54,7 +54,7 @@ export class RevocationStatusServiceImpl {
           operation: 'revocation_check',
           status: 'success',
           metadata: {
-            proofsCount: delegations.length,
+            proofsCount: delegations.length
           }
         })
         return ok(true)
@@ -93,14 +93,14 @@ export class RevocationStatusServiceImpl {
  * @param {number} concurrencyLimit - Max parallel requests (default: 5)
  * @returns {Promise<{isValid: boolean, revokedDelegation?: string, reason?: string}>}
  */
-async function hasValidDelegationChain(delegations, env, concurrencyLimit = 5) {
+async function hasValidDelegationChain (delegations, env, concurrencyLimit = 5) {
   // Collect all CIDs in the proof chain (breadth-first)
   /** @type {string[]} */
   const cidsToCheck = []
   /** @type {import('@ucanto/interface').Delegation[]} */
   const queue = [...delegations]
   const visited = new Set()
-  
+
   while (queue.length > 0) {
     const current = queue.shift()
     if (!current) continue
@@ -108,17 +108,17 @@ async function hasValidDelegationChain(delegations, env, concurrencyLimit = 5) {
     if (visited.has(cidStr)) continue
     visited.add(cidStr)
     cidsToCheck.push(cidStr)
-    
+
     // Add proofs to queue for traversal
     if (current.proofs) {
       queue.push(...current.proofs.map(p => /** @type {import('@ucanto/interface').Delegation} */ (p)))
     }
   }
-  
+
   // Check all CIDs in parallel with concurrency limit and cancellation
   const abortController = new AbortController()
   let foundRevocation = null
-  
+
   /**
    * Checks if a delegation is revoked
    * @param {string} cid - The CID of the delegation to check
@@ -138,24 +138,25 @@ async function hasValidDelegationChain(delegations, env, concurrencyLimit = 5) {
       abortController.abort() // Cancel remaining requests
       return foundRevocation
     }
-    
+
     return null
   }
-  
+
   // Start all checks with concurrency limit and return immediately on first revocation
+  // eslint-disable-next-line no-async-promise-executor
   return new Promise(async (resolve) => {
     let activePromises = 0
     let completedChecks = 0
     let cidIndex = 0
-    
+
     const startNextCheck = async () => {
       if (cidIndex >= cidsToCheck.length || abortController.signal.aborted) {
         return
       }
-      
+
       const cid = cidsToCheck[cidIndex++]
       activePromises++
-      
+
       try {
         const result = await checkCID(cid)
         if (result && !result.isValid) {
@@ -166,22 +167,22 @@ async function hasValidDelegationChain(delegations, env, concurrencyLimit = 5) {
       } catch (error) {
         console.error('Error checking CID:', cid, error)
       }
-      
+
       activePromises--
       completedChecks++
-      
+
       // Check if we're done
       if (completedChecks >= cidsToCheck.length) {
         resolve({ isValid: true })
         return
       }
-      
+
       // Start next check if we have capacity
       if (activePromises < concurrencyLimit) {
         startNextCheck()
       }
     }
-    
+
     // Start initial batch of checks
     const initialBatch = Math.min(concurrencyLimit, cidsToCheck.length)
     for (let i = 0; i < initialBatch; i++) {
