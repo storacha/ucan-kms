@@ -23,7 +23,7 @@ describe('RevocationStatusService', () => {
     service = new RevocationStatusServiceImpl()
 
     env = {
-      REVOCATION_STATUS_SERVICE_URL: 'https://revocation.service.test'
+      UPLOAD_SERVICE_URL: 'https://revocation.service.test'
     }
 
     // Mock UCAN proofs
@@ -39,7 +39,7 @@ describe('RevocationStatusService', () => {
 
   describe('checkStatus', () => {
     it('should return success when no revocation service URL configured', async () => {
-      env.REVOCATION_STATUS_SERVICE_URL = undefined
+      env.UPLOAD_SERVICE_URL = undefined
 
       const result = await service.checkStatus(mockProofs, env)
 
@@ -47,11 +47,51 @@ describe('RevocationStatusService', () => {
       expect(result.ok).to.be.true
     })
 
-    it('should return success when revocation service URL is configured (current implementation)', async () => {
+    it('should return success when no delegations are revoked (404 responses)', async () => {
+      // Mock fetch to return 404 for all CID checks
+      const fetchStub = sandbox.stub(globalThis, 'fetch')
+      const mockResponse = {
+        status: 404,
+        headers: {
+          get: () => null
+        }
+      }
+      // @ts-ignore - Testing with mock response
+      fetchStub.resolves(mockResponse)
+
       const result = await service.checkStatus(mockProofs, env)
 
       expect(result.ok).to.exist
       expect(result.ok).to.be.true
+      expect(fetchStub.calledTwice).to.be.true
+    })
+
+    it('should return failure when a delegation is revoked (200 response)', async () => {
+      // Mock fetch to return 200 for the first CID (revoked)
+      const fetchStub = sandbox.stub(globalThis, 'fetch')
+      const mockRevocationResponse = {
+        status: 200,
+        headers: {
+          get: (/** @type {string} */ name) => name === 'content-type' ? 'application/vnd.ipld.car' : null
+        }
+      }
+      const mockNotFoundResponse = {
+        status: 404,
+        headers: {
+          get: () => null
+        }
+      }
+      // @ts-ignore - Testing with mock responses
+      fetchStub.onFirstCall().resolves(mockRevocationResponse)
+      // @ts-ignore - Testing with mock responses
+      fetchStub.onSecondCall().resolves(mockNotFoundResponse)
+
+      const result = await service.checkStatus(mockProofs, env)
+
+      expect(result.error).to.exist
+      expect(result.error?.message).to.equal('Delegation revoked')
+      // Fetch should be called at least once to find the revocation
+      expect(fetchStub.called).to.be.true
     })
 
     it('should handle empty proofs array', async () => {
@@ -118,6 +158,17 @@ describe('RevocationStatusService', () => {
     })
 
     it('should return proper Result structure', async () => {
+      // Mock fetch to return 404 for all CID checks
+      const fetchStub = sandbox.stub(globalThis, 'fetch')
+      const mockResponse = {
+        status: 404,
+        headers: {
+          get: () => null
+        }
+      }
+      // @ts-ignore - Testing with mock response
+      fetchStub.resolves(mockResponse)
+
       const result = await service.checkStatus(mockProofs, env)
 
       // Should be a Result type with either ok or error property
@@ -129,14 +180,5 @@ describe('RevocationStatusService', () => {
       }
     })
 
-    it('should handle environment without REVOCATION_STATUS_SERVICE_URL property', async () => {
-      const envWithoutUrl = {}
-
-      // @ts-ignore - Testing error handling with incomplete environment object
-      const result = await service.checkStatus(mockProofs, envWithoutUrl)
-
-      expect(result.ok).to.exist
-      expect(result.ok).to.be.true
-    })
   })
 })
