@@ -17,6 +17,8 @@ describe('RevocationStatusService', () => {
   let env
   /** @type {any[]} */
   let mockProofs
+  /** @type {string} */
+  let mockSpaceDID
 
   beforeEach(() => {
     sandbox = sinon.createSandbox()
@@ -26,10 +28,18 @@ describe('RevocationStatusService', () => {
       UPLOAD_SERVICE_URL: 'https://revocation.service.test'
     }
 
+    mockSpaceDID = 'did:key:z6Mkw7vtEQHKzWV5eZxagJGzwXPJ8Cc3FUrnGGvBBnGKcUQw'
+
     // Mock UCAN proofs
     mockProofs = [
-      { cid: 'bafyreib4pff766vhpbxbhjbqqnsh5emeznvujayjj4z2iu533joyfpga5y' },
-      { cid: 'bafyreib4pff766vhpbxbhjbqqnsh5emeznvujayjj4z2iu533joyfpgb6z' }
+      { 
+        cid: 'bafyreib4pff766vhpbxbhjbqqnsh5emeznvujayjj4z2iu533joyfpga5y',
+        capabilities: [{ with: mockSpaceDID, can: 'space/encryption/key/decrypt' }]
+      },
+      { 
+        cid: 'bafyreib4pff766vhpbxbhjbqqnsh5emeznvujayjj4z2iu533joyfpgb6z',
+        capabilities: [{ with: mockSpaceDID, can: 'space/encryption/setup' }]
+      }
     ]
   })
 
@@ -41,7 +51,7 @@ describe('RevocationStatusService', () => {
     it('should return success when no revocation service URL configured', async () => {
       env.UPLOAD_SERVICE_URL = undefined
 
-      const result = await service.checkStatus(mockProofs, env)
+      const result = await service.checkStatus(mockProofs, mockSpaceDID, env)
 
       expect(result.ok).to.exist
       expect(result.ok).to.be.true
@@ -59,7 +69,7 @@ describe('RevocationStatusService', () => {
       // @ts-ignore - Testing with mock response
       fetchStub.resolves(mockResponse)
 
-      const result = await service.checkStatus(mockProofs, env)
+      const result = await service.checkStatus(mockProofs, mockSpaceDID, env)
 
       expect(result.ok).to.exist
       expect(result.ok).to.be.true
@@ -86,7 +96,7 @@ describe('RevocationStatusService', () => {
       // @ts-ignore - Testing with mock responses
       fetchStub.onSecondCall().resolves(mockNotFoundResponse)
 
-      const result = await service.checkStatus(mockProofs, env)
+      const result = await service.checkStatus(mockProofs, mockSpaceDID, env)
 
       expect(result.error).to.exist
       expect(result.error?.message).to.equal('Delegation revoked')
@@ -95,7 +105,7 @@ describe('RevocationStatusService', () => {
     })
 
     it('should handle empty proofs array', async () => {
-      const result = await service.checkStatus([], env)
+      const result = await service.checkStatus([], mockSpaceDID, env)
 
       expect(result.ok).to.exist
       expect(result.ok).to.be.true
@@ -103,9 +113,9 @@ describe('RevocationStatusService', () => {
 
     it('should handle null or undefined proofs gracefully', async () => {
       // @ts-ignore - Testing error handling for invalid inputs
-      const resultNull = await service.checkStatus(null, env)
+      const resultNull = await service.checkStatus(null, mockSpaceDID, env)
       // @ts-ignore - Testing error handling for invalid inputs
-      const resultUndefined = await service.checkStatus(undefined, env)
+      const resultUndefined = await service.checkStatus(undefined, mockSpaceDID, env)
 
       expect(resultNull.ok).to.exist
       expect(resultNull.ok).to.be.true
@@ -118,7 +128,7 @@ describe('RevocationStatusService', () => {
       const errorService = new RevocationStatusServiceImpl()
 
       // Override the checkStatus method to test the error handling path
-      errorService.checkStatus = async function (proofs, env) {
+      errorService.checkStatus = async function (proofs, spaceDID, env) {
         try {
           // Force an error to test the catch block
           throw new Error('Service error')
@@ -129,7 +139,7 @@ describe('RevocationStatusService', () => {
         }
       }
 
-      const result = await errorService.checkStatus(mockProofs, env)
+      const result = await errorService.checkStatus(mockProofs, mockSpaceDID, env)
 
       expect(result.error).to.exist
       expect(result.error?.message).to.include('Service error')
@@ -140,7 +150,7 @@ describe('RevocationStatusService', () => {
       const errorService = new RevocationStatusServiceImpl()
 
       // Override the checkStatus method to test the error handling path
-      errorService.checkStatus = async function (proofs, env) {
+      errorService.checkStatus = async function (proofs, spaceDID, env) {
         try {
           // Force a non-Error exception to test the catch block
           throw new Error('String error')
@@ -151,7 +161,7 @@ describe('RevocationStatusService', () => {
         }
       }
 
-      const result = await errorService.checkStatus(mockProofs, env)
+      const result = await errorService.checkStatus(mockProofs, mockSpaceDID, env)
 
       expect(result.error).to.exist
       expect(result.error?.message).to.equal('String error')
@@ -169,7 +179,7 @@ describe('RevocationStatusService', () => {
       // @ts-ignore - Testing with mock response
       fetchStub.resolves(mockResponse)
 
-      const result = await service.checkStatus(mockProofs, env)
+      const result = await service.checkStatus(mockProofs, mockSpaceDID, env)
 
       // Should be a Result type with either ok or error property
       expect(result).to.be.an('object')
@@ -178,6 +188,55 @@ describe('RevocationStatusService', () => {
       if (result.ok) {
         expect(result.ok).to.be.a('boolean')
       }
+    })
+
+    it('should reject delegations with wrong space DID', async () => {
+      const wrongSpaceDID = 'did:key:z6MkDifferentSpaceDIDForTesting'
+      const proofsWithWrongSpace = [
+        { 
+          cid: 'bafyreib4pff766vhpbxbhjbqqnsh5emeznvujayjj4z2iu533joyfpga5y',
+          capabilities: [{ with: 'did:key:z6MkWrongSpaceDID', can: 'space/encryption/key/decrypt' }]
+        }
+      ]
+
+      // @ts-ignore - Testing with mock proofs
+      const result = await service.checkStatus(proofsWithWrongSpace, wrongSpaceDID, env)
+
+      expect(result.error).to.exist
+      expect(result.error?.message).to.equal('Delegation revoked')
+    })
+
+    it('should accept delegations with correct space DID', async () => {
+      // Mock fetch to return 404 for all CID checks (no explicit revocations)
+      const fetchStub = sandbox.stub(globalThis, 'fetch')
+      const mockResponse = {
+        status: 404,
+        headers: {
+          get: () => null
+        }
+      }
+      // @ts-ignore - Testing with mock response
+      fetchStub.resolves(mockResponse)
+
+      const result = await service.checkStatus(mockProofs, mockSpaceDID, env)
+
+      expect(result.ok).to.exist
+      expect(result.ok).to.be.true
+    })
+
+    it('should handle delegations without capabilities gracefully', async () => {
+      const proofsWithoutCapabilities = [
+        { 
+          cid: 'bafyreib4pff766vhpbxbhjbqqnsh5emeznvujayjj4z2iu533joyfpga5y'
+          // No capabilities field
+        }
+      ]
+
+      // @ts-ignore - Testing with mock proofs
+      const result = await service.checkStatus(proofsWithoutCapabilities, mockSpaceDID, env)
+
+      expect(result.error).to.exist
+      expect(result.error?.message).to.equal('Delegation revoked')
     })
   })
 })

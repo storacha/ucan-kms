@@ -50,7 +50,7 @@ export async function handleKeyDecryption (request, invocation, ctx, env) {
     }
 
     // Step 3: Check revocation status
-    const revocationResult = await ctx.revocationStatusService?.checkStatus(proofs, env)
+    const revocationResult = await ctx.revocationStatusService?.checkStatus(proofs, request.space, env)
     if (revocationResult?.error) {
       auditLog.logInvocation(request.space, EncryptionKeyDecrypt.can, false, 'Revocation check failed', invocationCid, Date.now() - startTime)
       return error(revocationResult.error)

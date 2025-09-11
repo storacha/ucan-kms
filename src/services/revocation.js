@@ -32,29 +32,32 @@ export class RevocationStatusServiceImpl {
    * Checks revocation status of UCAN delegations via Storage UCAN Service
    *
    * @param {Ucanto.Proof[]} proofs - Array of UCAN proofs to check
+   * @param {string} spaceDID - Space DID to validate delegation context
    * @param {import('../types/env.js').Env} env - Environment configuration
    * @returns {Promise<import('@ucanto/server').Result<boolean, import('@ucanto/server').Failure>>}
    */
-  async checkStatus (proofs, env) {
+  async checkStatus (proofs, spaceDID, env) {
     const delegations = (proofs || []).map(p => /** @type {import('@ucanto/interface').Delegation} */ (p))
     if (delegations.length === 0) {
       this.auditLog.logSecurityEvent('revocation_check_success', {
         operation: 'revocation_check',
         status: 'success',
         metadata: {
-          proofsCount: delegations.length
+          proofsCount: delegations.length,
+          spaceDID
         }
       })
       return ok(true)
     }
     try {
-      const result = await hasValidDelegationChain(delegations, env)
+      const result = await hasValidDelegationChain(delegations, spaceDID, env)
       if (result.isValid) {
         this.auditLog.logSecurityEvent('revocation_check_success', {
           operation: 'revocation_check',
           status: 'success',
           metadata: {
-            proofsCount: delegations.length
+            proofsCount: delegations.length,
+            spaceDID
           }
         })
         return ok(true)
@@ -64,18 +67,16 @@ export class RevocationStatusServiceImpl {
         operation: 'revocation_check',
         status: 'failure',
         error: 'Delegation revoked',
-        metadata: { proofsCount: delegations.length, revokedDelegation: result }
+        metadata: { proofsCount: delegations.length, revokedDelegation: result, spaceDID }
       })
       return error(new Failure('Delegation revoked'))
     } catch (err) {
       console.error('[checkStatus] something went wrong:', err)
-
-      // Log revocation check failure
       this.auditLog.logSecurityEvent('revocation_check_failure', {
         operation: 'revocation_check',
         status: 'failure',
         error: err instanceof Error ? err.message : String(err),
-        metadata: { proofsCount: delegations.length }
+        metadata: { proofsCount: delegations.length, spaceDID }
       })
 
       // Generic error message must be returned to the client to avoid leaking information
@@ -89,16 +90,31 @@ export class RevocationStatusServiceImpl {
  * Collects all CIDs in proof chain and checks them in parallel with cancellation
  *
  * @param {import('@ucanto/interface').Delegation[]} delegations - The delegations to verify
+ * @param {string} spaceDID - Space DID to validate delegation context
  * @param {import('../types/env.js').Env} env - Environment configuration
  * @param {number} concurrencyLimit - Max parallel requests (default: 5)
  * @returns {Promise<{isValid: boolean, revokedDelegation?: string, reason?: string}>}
  */
-async function hasValidDelegationChain (delegations, env, concurrencyLimit = 5) {
-  // Collect all CIDs in the proof chain (breadth-first)
+async function hasValidDelegationChain (delegations, spaceDID, env, concurrencyLimit = 5) {
+  // Filter delegations that are for the expected space
+  const validDelegations = delegations.filter(delegation => {
+    return delegation.capabilities && delegation.capabilities.some(capability => {
+      return capability.with && capability.with === spaceDID
+    })
+  })
+  
+  if (validDelegations.length === 0) {
+    return {
+      isValid: false,
+      reason: `No valid delegations found for space ${spaceDID}`
+    }
+  }
+
+  // Collect CIDs only from space-valid delegations (breadth-first)
   /** @type {string[]} */
   const cidsToCheck = []
   /** @type {import('@ucanto/interface').Delegation[]} */
-  const queue = [...delegations]
+  const queue = [...validDelegations] // Only start with space-valid delegations
   const visited = new Set()
 
   while (queue.length > 0) {
@@ -109,12 +125,18 @@ async function hasValidDelegationChain (delegations, env, concurrencyLimit = 5) 
     visited.add(cidStr)
     cidsToCheck.push(cidStr)
 
-    // Add proofs to queue for traversal
+    // Add proofs to queue for traversal, but only if they're for the same space
     if (current.proofs) {
-      queue.push(...current.proofs.map(p => /** @type {import('@ucanto/interface').Delegation} */ (p)))
+      const spaceValidProofs = current.proofs.filter(proof => {
+        const p = /** @type {import('@ucanto/interface').Delegation} */ (proof)
+        return p.capabilities && p.capabilities.some(cap => 
+          cap.with && cap.with === spaceDID
+        )
+      })
+      queue.push(...spaceValidProofs.map(p => /** @type {import('@ucanto/interface').Delegation} */ (p)))
     }
   }
-
+  
   // Check all CIDs in parallel with concurrency limit and cancellation
   const abortController = new AbortController()
   let foundRevocation = null
