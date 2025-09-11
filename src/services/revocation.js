@@ -102,7 +102,7 @@ async function hasValidDelegationChain (delegations, spaceDID, env, concurrencyL
       return capability.with && capability.with === spaceDID
     })
   })
-  
+
   if (validDelegations.length === 0) {
     return {
       isValid: false,
@@ -129,14 +129,14 @@ async function hasValidDelegationChain (delegations, spaceDID, env, concurrencyL
     if (current.proofs) {
       const spaceValidProofs = current.proofs.filter(proof => {
         const p = /** @type {import('@ucanto/interface').Delegation} */ (proof)
-        return p.capabilities && p.capabilities.some(cap => 
+        return p.capabilities && p.capabilities.some(cap =>
           cap.with && cap.with === spaceDID
         )
       })
       queue.push(...spaceValidProofs.map(p => /** @type {import('@ucanto/interface').Delegation} */ (p)))
     }
   }
-  
+
   // Check all CIDs in parallel with concurrency limit and cancellation
   const abortController = new AbortController()
   let foundRevocation = null

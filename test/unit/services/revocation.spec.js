@@ -32,11 +32,11 @@ describe('RevocationStatusService', () => {
 
     // Mock UCAN proofs
     mockProofs = [
-      { 
+      {
         cid: 'bafyreib4pff766vhpbxbhjbqqnsh5emeznvujayjj4z2iu533joyfpga5y',
         capabilities: [{ with: mockSpaceDID, can: 'space/encryption/key/decrypt' }]
       },
-      { 
+      {
         cid: 'bafyreib4pff766vhpbxbhjbqqnsh5emeznvujayjj4z2iu533joyfpgb6z',
         capabilities: [{ with: mockSpaceDID, can: 'space/encryption/setup' }]
       }
@@ -193,7 +193,7 @@ describe('RevocationStatusService', () => {
     it('should reject delegations with wrong space DID', async () => {
       const wrongSpaceDID = 'did:key:z6MkDifferentSpaceDIDForTesting'
       const proofsWithWrongSpace = [
-        { 
+        {
           cid: 'bafyreib4pff766vhpbxbhjbqqnsh5emeznvujayjj4z2iu533joyfpga5y',
           capabilities: [{ with: 'did:key:z6MkWrongSpaceDID', can: 'space/encryption/key/decrypt' }]
         }
@@ -226,7 +226,7 @@ describe('RevocationStatusService', () => {
 
     it('should handle delegations without capabilities gracefully', async () => {
       const proofsWithoutCapabilities = [
-        { 
+        {
           cid: 'bafyreib4pff766vhpbxbhjbqqnsh5emeznvujayjj4z2iu533joyfpga5y'
           // No capabilities field
         }
