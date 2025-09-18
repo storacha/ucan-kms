@@ -6,12 +6,12 @@
 import { describe, it, beforeEach, afterEach } from 'mocha'
 import { expect } from 'chai'
 import sinon from 'sinon'
-import { RevocationStatusServiceImpl } from '../../../src/services/revocation.js'
+import { RevocationStatusClientImpl } from '../../../src/clients/revocation.js'
 
 describe('RevocationStatusService', () => {
   /** @type {sinon.SinonSandbox} */
   let sandbox
-  /** @type {RevocationStatusServiceImpl} */
+  /** @type {RevocationStatusClientImpl} */
   let service
   /** @type {any} */
   let env
@@ -22,7 +22,7 @@ describe('RevocationStatusService', () => {
 
   beforeEach(() => {
     sandbox = sinon.createSandbox()
-    service = new RevocationStatusServiceImpl()
+    service = new RevocationStatusClientImpl()
 
     env = {
       UPLOAD_SERVICE_URL: 'https://revocation.service.test'
@@ -48,13 +48,13 @@ describe('RevocationStatusService', () => {
   })
 
   describe('checkStatus', () => {
-    it('should return success when no revocation service URL configured', async () => {
+    it('should return error when no revocation service URL configured', async () => {
       env.UPLOAD_SERVICE_URL = undefined
 
       const result = await service.checkStatus(mockProofs, mockSpaceDID, env)
 
-      expect(result.ok).to.exist
-      expect(result.ok).to.be.true
+      expect(result.error).to.exist
+      expect(result.error?.message).to.equal('No revocation service URL configured - cannot validate delegation status')
     })
 
     it('should return success when no delegations are revoked (404 responses)', async () => {
@@ -99,7 +99,7 @@ describe('RevocationStatusService', () => {
       const result = await service.checkStatus(mockProofs, mockSpaceDID, env)
 
       expect(result.error).to.exist
-      expect(result.error?.message).to.equal('Delegation revoked')
+      expect(result.error?.message).to.equal('Delegation explicitly revoked')
       // Fetch should be called at least once to find the revocation
       expect(fetchStub.called).to.be.true
     })
@@ -107,8 +107,8 @@ describe('RevocationStatusService', () => {
     it('should handle empty proofs array', async () => {
       const result = await service.checkStatus([], mockSpaceDID, env)
 
-      expect(result.ok).to.exist
-      expect(result.ok).to.be.true
+      expect(result.error).to.exist
+      expect(result.error?.message).to.equal(`No valid delegations found for space ${mockSpaceDID}`)
     })
 
     it('should handle null or undefined proofs gracefully', async () => {
@@ -117,15 +117,15 @@ describe('RevocationStatusService', () => {
       // @ts-ignore - Testing error handling for invalid inputs
       const resultUndefined = await service.checkStatus(undefined, mockSpaceDID, env)
 
-      expect(resultNull.ok).to.exist
-      expect(resultNull.ok).to.be.true
-      expect(resultUndefined.ok).to.exist
-      expect(resultUndefined.ok).to.be.true
+      expect(resultNull.error).to.exist
+      expect(resultNull.error?.message).to.equal(`No valid delegations found for space ${mockSpaceDID}`)
+      expect(resultUndefined.error).to.exist
+      expect(resultUndefined.error?.message).to.equal(`No valid delegations found for space ${mockSpaceDID}`)
     })
 
     it('should handle errors gracefully', async () => {
       // Create a service that will test error handling
-      const errorService = new RevocationStatusServiceImpl()
+      const errorService = new RevocationStatusClientImpl()
 
       // Override the checkStatus method to test the error handling path
       errorService.checkStatus = async function (proofs, spaceDID, env) {
@@ -147,7 +147,7 @@ describe('RevocationStatusService', () => {
 
     it('should handle non-Error exceptions', async () => {
       // Create a service that will test non-Error exception handling
-      const errorService = new RevocationStatusServiceImpl()
+      const errorService = new RevocationStatusClientImpl()
 
       // Override the checkStatus method to test the error handling path
       errorService.checkStatus = async function (proofs, spaceDID, env) {
@@ -203,7 +203,7 @@ describe('RevocationStatusService', () => {
       const result = await service.checkStatus(proofsWithWrongSpace, wrongSpaceDID, env)
 
       expect(result.error).to.exist
-      expect(result.error?.message).to.equal('Delegation revoked')
+      expect(result.error?.message).to.equal(`No valid delegations found for space ${wrongSpaceDID}`)
     })
 
     it('should accept delegations with correct space DID', async () => {
@@ -236,7 +236,7 @@ describe('RevocationStatusService', () => {
       const result = await service.checkStatus(proofsWithoutCapabilities, mockSpaceDID, env)
 
       expect(result.error).to.exist
-      expect(result.error?.message).to.equal('Delegation revoked')
+      expect(result.error?.message).to.equal(`No valid delegations found for space ${mockSpaceDID}`)
     })
   })
 })

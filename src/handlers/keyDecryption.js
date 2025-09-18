@@ -34,14 +34,14 @@ export async function handleKeyDecryption (request, invocation, ctx, env) {
       return error(new Failure(errorMsg))
     }
 
-    // Step 1: Validate decrypt delegation and invocation
+    // Validate decrypt delegation and invocation
     const validationResult = await ctx.ucanPrivacyValidationService?.validateDecryption(invocation, request.space, ctx, env)
     if (validationResult?.error) {
       auditLog.logInvocation(request.space, EncryptionKeyDecrypt.can, false, 'UCAN validation failed', invocationCid, Date.now() - startTime)
       return error(validationResult.error)
     }
 
-    // Step 2: Validate space has paid plan
+    // Validate space has paid plan
     const planResult = await ctx.subscriptionStatusService.isProvisioned(request.space, proofs, ctx)
     if (planResult?.error) {
       const errorMsg = planResult.error.message || 'Subscription validation failed'
@@ -49,20 +49,14 @@ export async function handleKeyDecryption (request, invocation, ctx, env) {
       return error(planResult.error)
     }
 
-    // Step 3: Check revocation status
-    const revocationResult = await ctx.revocationStatusService?.checkStatus(proofs, request.space, env)
-    if (revocationResult?.error) {
+    // Validate if the decryption delegation was not revoked
+    const revocationResult = await ctx.revocationStatusClient.checkStatus(proofs, request.space, env)
+    if (revocationResult.error) {
       auditLog.logInvocation(request.space, EncryptionKeyDecrypt.can, false, 'Revocation check failed', invocationCid, Date.now() - startTime)
       return error(revocationResult.error)
     }
 
-    if (!ctx.kms) {
-      const errorMsg = 'KMS service not available'
-      auditLog.logInvocation(request.space, EncryptionKeyDecrypt.can, false, errorMsg, invocationCid, Date.now() - startTime)
-      return error(new Failure(errorMsg))
-    }
-
-    // Step 4: Decrypt symmetric key using KMS
+    // Decrypt symmetric key using KMS
     const kmsResult = await ctx.kms.decryptSymmetricKey(request, env)
     if (kmsResult.error) {
       auditLog.logInvocation(request.space, EncryptionKeyDecrypt.can, false, 'KMS decryption failed', invocationCid, Date.now() - startTime)

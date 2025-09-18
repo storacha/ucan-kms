@@ -5,7 +5,7 @@ import { createService } from './service.js'
 import { createServer } from './server.js'
 import { ed25519 } from '@ucanto/principal'
 import { Schema as UcantoSchema } from '@ucanto/core'
-import { RevocationStatusServiceImpl } from './services/revocation.js'
+import { RevocationStatusClientImpl } from './clients/revocation.js'
 import { PlanSubscriptionServiceImpl } from './services/subscription.js'
 import { UcanPrivacyValidationServiceImpl } from './services/ucanValidation.js'
 /* eslint-disable-next-line */
@@ -58,7 +58,7 @@ export default {
       ctx.ucanKmsIdentity = ucanKmsIdentity;
       ctx.kms = new GoogleKMSService(env, { auditLog, environment: env.ENVIRONMENT });
       ctx.kmsRateLimiter = new KmsRateLimiter(env, { auditLog });
-      ctx.revocationStatusService = new RevocationStatusServiceImpl({ auditLog });
+      ctx.revocationStatusClient = new RevocationStatusClientImpl({ auditLog });
       ctx.subscriptionStatusService = new PlanSubscriptionServiceImpl(env, { auditLog });
       ctx.ucanPrivacyValidationService = new UcanPrivacyValidationServiceImpl({ auditLog });
 

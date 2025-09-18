@@ -29,14 +29,14 @@ export async function handleEncryptionSetup (request, invocation, ctx, env) {
       return error(new Failure(errorMsg))
     }
 
-    // Step 1: Validate UCAN invocation
-    const ucanValidationResult = await ctx.ucanPrivacyValidationService?.validateEncryption(invocation, request.space)
+    // Validate UCAN invocation
+    const ucanValidationResult = await ctx.ucanPrivacyValidationService.validateEncryption(invocation, request.space)
     if (ucanValidationResult?.error) {
       auditLog.logInvocation(request.space, EncryptionSetup.can, false, ucanValidationResult.error.message, invocationCid, Date.now() - startTime)
       return error(ucanValidationResult.error)
     }
 
-    // Step 2: Validate space has paid plan
+    // Validate space has paid plan
     const planResult = await ctx.subscriptionStatusService.isProvisioned(request.space, proofs, ctx)
     if (planResult?.error) {
       const errorMsg = planResult.error.message || 'Subscription validation failed'
@@ -44,21 +44,14 @@ export async function handleEncryptionSetup (request, invocation, ctx, env) {
       return error(planResult.error)
     }
 
-    // Step 3: Check revocation status
-    const revocationResult = await ctx.revocationStatusService?.checkStatus(proofs, request.space, env)
+    // Check revocation status
+    const revocationResult = await ctx.revocationStatusClient.checkStatus(proofs, request.space, env)
     if (revocationResult?.error) {
       auditLog.logInvocation(request.space, EncryptionSetup.can, false, 'Revocation check failed', invocationCid, Date.now() - startTime)
       return error(revocationResult.error)
     }
 
-    // Step 4: Ensure KMS service is available
-    if (!ctx.kms) {
-      const errorMsg = 'KMS service not available'
-      auditLog.logInvocation(request.space, EncryptionSetup.can, false, errorMsg, invocationCid, Date.now() - startTime)
-      return error(new Failure(errorMsg))
-    }
-
-    // Step 5: Setup KMS key
+    // Setup KMS key
     const kmsResult = await ctx.kms.setupKeyForSpace(request, env)
     if (kmsResult.error) {
       console.error('[EncryptionSetup] KMS setup failed:', kmsResult.error.message)
@@ -67,7 +60,7 @@ export async function handleEncryptionSetup (request, invocation, ctx, env) {
       return error(kmsResult.error)
     }
 
-    // Step 6: Validate KMS result
+    // Validate KMS result
     const { publicKey, algorithm, provider } = kmsResult.ok
     if (!publicKey || !algorithm || !provider) {
       const errorMsg = 'Missing public key, algorithm, or provider in encryption setup'
@@ -75,7 +68,6 @@ export async function handleEncryptionSetup (request, invocation, ctx, env) {
       return error(new Failure(errorMsg))
     }
 
-    // Step 7: Success - Return KMS result
     const duration = Date.now() - startTime
     auditLog.logInvocation(request.space, EncryptionSetup.can, true, undefined, invocationCid, duration)
     return ok(kmsResult.ok)

@@ -2,7 +2,7 @@ import { Result } from "@ucanto/server";
 import * as Ucanto from "@ucanto/interface";
 import { Env } from "../types/env.js";
 
-export interface RevocationStatusService {
+export interface RevocationStatusClient {
   /**
    * Checks revocation status of UCAN delegations
    *

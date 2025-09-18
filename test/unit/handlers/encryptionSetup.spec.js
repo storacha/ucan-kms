@@ -43,6 +43,9 @@ describe('Encryption Setup Handler', () => {
       subscriptionStatusService: {
         isProvisioned: () => ({ ok: true })
       },
+      revocationStatusClient: {
+        checkStatus: () => Promise.resolve({ ok: true })
+      },
       kms: {
         setupKeyForSpace: () => Promise.resolve({
           ok: {
@@ -152,6 +155,9 @@ describe('Encryption Setup Handler', () => {
     }
     mockCtx.subscriptionStatusService = {
       isProvisioned: sinon.stub().resolves({ ok: { isProvisioned: true } })
+    }
+    mockCtx.revocationStatusClient = {
+      checkStatus: sinon.stub().resolves({ ok: true })
     }
     mockCtx.kms = {
       setupKeyForSpace: sinon.stub().resolves({ error: new Error('Failed to setup key') })

@@ -5,7 +5,7 @@ import {
   SpaceEncryptionSetup,
   SpaceEncryptionKeyDecrypt,
 } from "@storacha/capabilities/types";
-import { RevocationStatusService } from "./services/revocation.types.js";
+import { RevocationStatusClient } from "./clients/revocation.types.js";
 import { KMSService } from "./services/kms.types.js";
 import { SubscriptionStatusService } from "./services/subscription.types.js";
 import { UcanPrivacyValidationService } from "./services/ucanValidation.types.js";
@@ -47,12 +47,12 @@ export interface Context<T = unknown, U = unknown> {
   /**
    * KMS service for encryption/decryption operations
    */
-  kms?: KMSService;
+  kms: KMSService;
 
   /**
-   * Revocation status service for UCAN delegation revocation checking
+   * Revocation status client for UCAN delegation revocation checking
    */
-  revocationStatusService?: RevocationStatusService;
+  revocationStatusClient: RevocationStatusClient;
 
   /**
    * Subscription status service for space plan validation
@@ -62,12 +62,12 @@ export interface Context<T = unknown, U = unknown> {
   /**
    * UCAN privacy validation service for validating delegations
    */
-  ucanPrivacyValidationService?: UcanPrivacyValidationService;
+  ucanPrivacyValidationService: UcanPrivacyValidationService;
 
   /**
    * KMS rate limiter for controlling KMS operation frequency
    */
-  kmsRateLimiter?: KmsRateLimiter;
+  kmsRateLimiter: KmsRateLimiter;
 
   /**
    * This is optional because the handler is responsible for creating the service if it is not provided.
