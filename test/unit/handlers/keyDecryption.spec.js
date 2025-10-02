@@ -51,8 +51,8 @@ describe('Key Decryption Handler', () => {
       subscriptionStatusService: {
         isProvisioned: () => Promise.resolve({ ok: { isProvisioned: true } })
       },
-      revocationStatusService: {
-        checkStatus: () => ({ ok: true })
+      revocationStatusClient: {
+        checkStatus: () => Promise.resolve({ ok: true })
       },
       kms: {
         decryptSymmetricKey: () => Promise.resolve({
@@ -78,7 +78,7 @@ describe('Key Decryption Handler', () => {
       .resolves({ ok: { isProvisioned: true } })
 
     // Stub revocation status check
-    checkStatusStub = sandbox.stub(mockCtx.revocationStatusService, 'checkStatus')
+    checkStatusStub = sandbox.stub(mockCtx.revocationStatusClient, 'checkStatus')
       .resolves({ ok: true })
 
     // Stub KMS decrypt
