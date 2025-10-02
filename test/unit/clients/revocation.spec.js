@@ -30,15 +30,25 @@ describe('RevocationStatusService', () => {
 
     mockSpaceDID = 'did:key:z6Mkw7vtEQHKzWV5eZxagJGzwXPJ8Cc3FUrnGGvBBnGKcUQw'
 
-    // Mock UCAN proofs
+    // Mock UCAN proofs - must include space/content/decrypt delegation with proof chain
+    // Add properties that isDelegation expects
+    const parentDelegation = {
+      cid: { toString: () => 'bafyreib4pff766vhpbxbhjbqqnsh5emeznvujayjj4z2iu533joyfpgb6z' },
+      capabilities: [{ with: mockSpaceDID, can: 'space/*' }],
+      proofs: [],
+      issuer: { did: () => 'did:key:test-issuer' },
+      audience: { did: () => 'did:key:test-audience' },
+      expiration: Math.floor(Date.now() / 1000) + 3600
+    }
+
     mockProofs = [
       {
-        cid: 'bafyreib4pff766vhpbxbhjbqqnsh5emeznvujayjj4z2iu533joyfpga5y',
-        capabilities: [{ with: mockSpaceDID, can: 'space/encryption/key/decrypt' }]
-      },
-      {
-        cid: 'bafyreib4pff766vhpbxbhjbqqnsh5emeznvujayjj4z2iu533joyfpgb6z',
-        capabilities: [{ with: mockSpaceDID, can: 'space/encryption/setup' }]
+        cid: { toString: () => 'bafyreib4pff766vhpbxbhjbqqnsh5emeznvujayjj4z2iu533joyfpga5y' },
+        capabilities: [{ with: mockSpaceDID, can: 'space/content/decrypt' }],
+        proofs: [parentDelegation], // This creates a proof chain to test
+        issuer: { did: () => 'did:key:test-issuer' },
+        audience: { did: () => 'did:key:test-audience' },
+        expiration: Math.floor(Date.now() / 1000) + 3600
       }
     ]
   })
@@ -73,7 +83,7 @@ describe('RevocationStatusService', () => {
 
       expect(result.ok).to.exist
       expect(result.ok).to.be.true
-      expect(fetchStub.calledTwice).to.be.true
+      expect(fetchStub.calledTwice).to.be.true // Decrypt delegation + its parent proof
     })
 
     it('should return failure when a delegation is revoked (200 response)', async () => {
@@ -194,8 +204,12 @@ describe('RevocationStatusService', () => {
       const wrongSpaceDID = 'did:key:z6MkDifferentSpaceDIDForTesting'
       const proofsWithWrongSpace = [
         {
-          cid: 'bafyreib4pff766vhpbxbhjbqqnsh5emeznvujayjj4z2iu533joyfpga5y',
-          capabilities: [{ with: 'did:key:z6MkWrongSpaceDID', can: 'space/encryption/key/decrypt' }]
+          cid: { toString: () => 'bafyreib4pff766vhpbxbhjbqqnsh5emeznvujayjj4z2iu533joyfpga5y' },
+          capabilities: [{ with: 'did:key:z6MkWrongSpaceDID', can: 'space/content/decrypt' }],
+          proofs: [],
+          issuer: { did: () => 'did:key:test-issuer' },
+          audience: { did: () => 'did:key:test-audience' },
+          expiration: Math.floor(Date.now() / 1000) + 3600
         }
       ]
 
