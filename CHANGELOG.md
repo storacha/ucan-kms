@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.1.0](https://github.com/storacha/ucan-kms/compare/v1.0.3...v1.1.0) (2025-10-03)
+
+
+### Features
+
+* check revocations ([#14](https://github.com/storacha/ucan-kms/issues/14)) ([b30d125](https://github.com/storacha/ucan-kms/commit/b30d1251c9bbd537c8044167dedd7484652f3aaf))
+
+
+### Bug Fixes
+
+* filter delegations for the correct space ([07fe6c1](https://github.com/storacha/ucan-kms/commit/07fe6c1d31ed189351d5807cf197c93f299b0c98))
+
 ## [1.0.3](https://github.com/storacha/ucan-kms/compare/v1.0.2...v1.0.3) (2025-08-22)
 
 
