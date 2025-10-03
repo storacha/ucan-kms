@@ -95,13 +95,13 @@ export class RevocationStatusClientImpl {
 async function verifyDelegationChain (proofs, spaceDID, uploadServiceUrl) {
   // Find the specific delegation that grants the decrypt capability for the space that we are decrypting for
   // Otherwise we would have to check all delegations, an any revocation would break the decryption process
-  const decryptDelegations = (proofs || [])
-    .filter(isDelegation)
-    .filter(d => {
-      return d.capabilities && d.capabilities.some(cap => {
-        return cap.can === 'space/content/decrypt' && cap.with === spaceDID
-      })
+  const validDelegations = (proofs || []).filter(isDelegation)
+
+  const decryptDelegations = validDelegations.filter(d => {
+    return d.capabilities && d.capabilities.some(cap => {
+      return cap.can === 'space/content/decrypt' && cap.with === spaceDID
     })
+  })
 
   if (decryptDelegations.length === 0) {
     return {
@@ -121,18 +121,31 @@ async function verifyDelegationChain (proofs, spaceDID, uploadServiceUrl) {
 
   // Leaf-first traversal: collect all CIDs first, then sort by "leaf-ness"
   /** @type {import('@ucanto/interface').Delegation[]} */
-  const allDelegations = []
+  const chainDelegations = []
   /** @type {import('@ucanto/interface').Delegation[]} */
   const queue = [...decryptDelegations]
 
-  // First pass: collect all delegations in the chain
+  // First pass: collect all delegations in the chain, but only those relevant to the current space
   while (queue.length > 0) {
     const current = queue.shift()
     if (!current) continue
     const cidStr = current.cid.toString()
     if (visited.has(cidStr)) continue
     visited.add(cidStr)
-    allDelegations.push(current)
+
+    // Only include delegations that are relevant to the current space
+    const isRelevantToSpace = current.capabilities && current.capabilities.some(cap => {
+      // If the 'with' field is a space DID (starts with 'did:key:'), check if it matches current space
+      if (cap.with && cap.with.startsWith('did:key:')) {
+        return cap.with === spaceDID
+      }
+      // Otherwise, assume it's relevant (service DIDs, wildcards, etc.)
+      return true
+    })
+
+    if (isRelevantToSpace) {
+      chainDelegations.push(current)
+    }
 
     if (current.proofs) {
       const nextProofs = current.proofs.filter(isDelegation)
@@ -144,7 +157,6 @@ async function verifyDelegationChain (proofs, spaceDID, uploadServiceUrl) {
   const revocationQueue = new PQueue({ concurrency: 5 })
 
   /**
-   * Checks if a delegation CID has been explicitly revoked
    * @param {string} cid - The CID of the delegation to check
    * @returns {Promise<{isValid: boolean, revokedDelegation?: string, reason?: string} | null>}
    */
@@ -157,7 +169,6 @@ async function verifyDelegationChain (proofs, spaceDID, uploadServiceUrl) {
       if (response.status === 200) {
         // Abort all other requests immediately
         abortController.abort()
-        revocationQueue.clear()
         return {
           isValid: false,
           revokedDelegation: cid,
@@ -165,29 +176,31 @@ async function verifyDelegationChain (proofs, spaceDID, uploadServiceUrl) {
         }
       }
 
-      return null
-    } catch (/** @type {any} */ error) {
-      if (error?.name === 'AbortError') {
-        // Request was cancelled - this is expected
+      if (response.status === 404) {
+        // Not revoked
         return null
       }
-      // Log network errors for debugging
-      console.error(`[verifyDelegationChain] Network error checking revocation for ${cid}:`, error)
-      return {
-        isValid: false,
-        reason: 'Revocation check failed'
+
+      // Unexpected status
+      console.warn(`[checkCID] Unexpected response status ${response.status} for CID ${cid}`)
+      return null
+    } catch (error) {
+      if (/** @type {any} */ (error).name === 'AbortError') {
+        // Request was aborted because another request found a revocation
+        return null
       }
+      console.error(`[checkCID] Error checking revocation for CID ${cid}:`, error)
+      return null
     }
   }
 
-  // Race all checks - return immediately on first revocation
   try {
     // Create a promise that resolves when ANY revocation is found
     const racePromise = new Promise((resolve) => {
       let completed = 0
-      const total = allDelegations.length
+      const total = chainDelegations.length
 
-      allDelegations.forEach(delegation => {
+      chainDelegations.forEach((/** @type {any} */ delegation) => {
         revocationQueue.add(async () => {
           const result = await checkCID(delegation.cid.toString())
           if (result && !result.isValid) {

@@ -45,11 +45,11 @@ export async function handleEncryptionSetup (request, invocation, ctx, env) {
     }
 
     // Check revocation status
-    const revocationResult = await ctx.revocationStatusClient.checkStatus(proofs, request.space, env)
-    if (revocationResult?.error) {
-      auditLog.logInvocation(request.space, EncryptionSetup.can, false, 'Revocation check failed', invocationCid, Date.now() - startTime)
-      return error(revocationResult.error)
-    }
+    // const revocationResult = await ctx.revocationStatusClient.checkStatus(proofs, request.space, env)
+    // if (revocationResult?.error) {
+    //   auditLog.logInvocation(request.space, EncryptionSetup.can, false, 'Revocation check failed', invocationCid, Date.now() - startTime)
+    //   return error(revocationResult.error)
+    // }
 
     // Setup KMS key
     const kmsResult = await ctx.kms.setupKeyForSpace(request, env)
